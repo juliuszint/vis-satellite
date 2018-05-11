@@ -87,5 +87,6 @@
     <InterfaceDefinition Include="MainWindow.xib" />
     <InterfaceDefinition Include="MainMenu.xib" />
   </ItemGroup>
+  <Import Project="..\vissatellite.shared\vissatellite.shared.projitems" Label="Shared" Condition="Exists('..\vissatellite.shared\vissatellite.shared.projitems')" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Mac\Xamarin.Mac.CSharp.targets" />
 </Project>

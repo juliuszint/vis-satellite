@@ -1,7 +1,9 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisSatellite", "vissatellite.mac\vissatellite.mac.csproj", "{1D3B62E2-9919-4FC2-AA79-B03130F16B41}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "vissatellite.mac", "vissatellite.mac\vissatellite.mac.csproj", "{1D3B62E2-9919-4FC2-AA79-B03130F16B41}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "vissatellite.shared", "vissatellite.shared\vissatellite.shared.shproj", "{10DF0F5E-DE21-4C26-84E4-D5CFD74248AB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
