@@ -5,7 +5,6 @@ using AppKit;
 
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Platform.MacOS;
-using System.Drawing;
 
 using vissatellite.shared;
 
