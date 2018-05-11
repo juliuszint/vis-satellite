@@ -19,7 +19,7 @@ namespace VisSatellite
         public MainWindowController() : base("MainWindow")
         {
         }
-
+      
 		public override void AwakeFromNib()
         {
             base.AwakeFromNib();

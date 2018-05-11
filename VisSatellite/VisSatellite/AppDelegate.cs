@@ -12,7 +12,7 @@ namespace VisSatellite
 		{
 			return true;
 		}
-
+        
         public override void DidFinishLaunching(NSNotification notification)
         {
             // Insert code here to initialize your application
