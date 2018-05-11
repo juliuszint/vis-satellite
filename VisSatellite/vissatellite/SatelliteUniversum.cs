@@ -31,8 +31,8 @@ namespace vissatellite
             this.LoadMeshAsset(ref this.sphereMeshAsset);
 
             this.basicShaderAsset = new BasicShaderAssetData();
-            this.basicShaderAsset.VertexShaderName = "vissatellite.shader.Simple_FS.glsl";
-            this.basicShaderAsset.FragmentShaderName = "vissatellite.shader.Simple_VS.glsl";
+            this.basicShaderAsset.VertexShaderName = "vissatellite.shader.Simple_VS.glsl";
+            this.basicShaderAsset.FragmentShaderName = "vissatellite.shader.Simple_FS.glsl";
             this.LoadShaderAsset(ref this.basicShaderAsset);
         }
 
