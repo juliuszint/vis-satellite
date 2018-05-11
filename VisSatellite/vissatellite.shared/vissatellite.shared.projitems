@@ -12,20 +12,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)SatelliteUniverse.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Wavefront.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BaumGame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)shader\Blinn_FS.glsl">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="$(MSBuildThisFileDirectory)shader\Blinn_VS.glsl">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="$(MSBuildThisFileDirectory)shader\Simple_FS.glsl">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="$(MSBuildThisFileDirectory)shader\Simple_VS.glsl">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="$(MSBuildThisFileDirectory)textures\brown.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -40,5 +29,9 @@
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)meshes\icosphere.obj" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)meshes\cube.obj" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)meshes\plane.obj" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)shader\Simple_VS.glsl" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)shader\Simple_FS.glsl" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)shader\Blinn_VS.glsl" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)shader\Blinn_FS.glsl" />
   </ItemGroup>
 </Project>

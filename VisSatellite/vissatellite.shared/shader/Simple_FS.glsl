@@ -1,4 +1,4 @@
-#version 130
+#version 120
 precision highp float;
 
 uniform sampler2D sampler; 

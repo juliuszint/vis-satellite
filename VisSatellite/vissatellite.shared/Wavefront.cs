@@ -43,7 +43,7 @@ namespace vissatellite.shared
 
         public static ObjectVertexData LoadPlain(string resourceName)
         {
-			var stringContent = StreamReadAllLines(resourceName);
+			var stringContent = Utils.LoadFromEmbeddedResource(resourceName);
             var textContent = SplitStringContent(stringContent);
             var inMemoryWavefront = AllocateMemoryForFile(textContent);
             ParseFile(inMemoryWavefront, textContent);
@@ -51,17 +51,9 @@ namespace vissatellite.shared
             return result;
         }
 
-        private static string StreamReadAllLines(string resourceName)
-		{
-			var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);         
-			using (StreamReader sr = new StreamReader(stream, Encoding.Default)) {
-				return sr.ReadToEnd();
-			}
-		}
-
         public static ObjectVertexData Load(string resourceName)
         {
-			var stringContent = StreamReadAllLines(resourceName);
+			var stringContent = Utils.LoadFromEmbeddedResource(resourceName);
             var textContent = SplitStringContent(stringContent);
             var inMemoryWavefront = AllocateMemoryForFile(textContent);
             ParseFile(inMemoryWavefront, textContent);

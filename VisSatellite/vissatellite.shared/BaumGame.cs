@@ -1,7 +1,7 @@
 ﻿using System;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
-using System.Drawing;
+//using System.Drawing;
 using System.IO;
 
 namespace derbaum

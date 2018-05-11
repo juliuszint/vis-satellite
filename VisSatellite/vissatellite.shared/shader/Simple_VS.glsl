@@ -1,4 +1,4 @@
-#version 130
+#version 120
 precision highp float;
 
 // input aus der VAO-Datenstruktur

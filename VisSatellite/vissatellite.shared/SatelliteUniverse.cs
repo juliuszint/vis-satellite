@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+﻿using System;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
 
@@ -87,13 +87,23 @@ namespace vissatellite.shared
 	public class SatelliteUniverse
     {   
         private MeshAssetData sphereMeshAsset;
+        private BasicShaderAssetData basicShaderAsset;
 
 		public void Load()
 		{            
+            var shadingLanguageVersion = GL.GetString(StringName.ShadingLanguageVersion);
+            var openGlVersion = GL.GetString(StringName.Version);
+
             this.sphereMeshAsset = new MeshAssetData() {
 				AssetName = "vissatellite.mac.meshes.icosphere.obj"
             };
             this.LoadMeshData(ref this.sphereMeshAsset);
+
+            this.basicShaderAsset = new BasicShaderAssetData {
+                VertexShaderName = "vissatellite.mac.shader.Simple_VS.glsl",
+                FragmentShaderName = "vissatellite.mac.shader.Simple_FS.glsl"
+            };
+            this.LoadShaderAsset(ref this.basicShaderAsset);
 		}
 
         private void LoadMeshData(ref MeshAssetData meshAsset)
@@ -106,6 +116,112 @@ namespace vissatellite.shared
             meshAsset.IndicesCount = planeMesh.Indices.Length;
             meshAsset.IsLoaded = true;
         }
+
+        private void LoadBlinnShaderAsset(ref BlinnShaderAsset shader)
+        {
+            this.LoadShaderAsset(ref shader.BasicShader);
+
+            GL.BindAttribLocation(
+                    shader.BasicShader.ProgramHandle,
+                    VertexAttribIndex.Tangent,
+                    "in_tangent");
+            GL.BindAttribLocation(
+                    shader.BasicShader.ProgramHandle,
+                    VertexAttribIndex.Bitangent,
+                    "in_bitangent");
+
+            shader.ModelMatrixLocation = GL.GetUniformLocation(
+                    shader.BasicShader.ProgramHandle,
+                    "model_matrix");
+            shader.MaterialShininessLocation = GL.GetUniformLocation(
+                    shader.BasicShader.ProgramHandle,
+                    "specular_shininess");
+            shader.LightDirectionLocation = GL.GetUniformLocation(
+                    shader.BasicShader.ProgramHandle,
+                    "light_direction");
+            shader.LightAmbientColorLocation = GL.GetUniformLocation(
+                    shader.BasicShader.ProgramHandle,
+                    "light_ambient_color");
+            shader.LightDiffuseColorLocation = GL.GetUniformLocation(
+                    shader.BasicShader.ProgramHandle,
+                    "light_diffuse_color");
+            shader.LightSpecularColorLocation = GL.GetUniformLocation(
+                    shader.BasicShader.ProgramHandle,
+                    "light_specular_color");
+            shader.CameraPositionLocation = GL.GetUniformLocation(
+                    shader.BasicShader.ProgramHandle,
+                    "camera_position");
+            shader.ColorTextureLocation = GL.GetUniformLocation(
+                    shader.BasicShader.ProgramHandle, "color_texture");
+            shader.NormalTextureLocation = GL.GetUniformLocation(
+                    shader.BasicShader.ProgramHandle,
+                    "normalmap_texture");
+        }
+
+        private void LoadShaderAsset(ref BasicShaderAssetData shaderAsset)
+        {
+            if (shaderAsset.IsLoaded)
+                return;
+
+            string vs = Utils.LoadFromEmbeddedResource(shaderAsset.VertexShaderName);
+            string fs = Utils.LoadFromEmbeddedResource(shaderAsset.FragmentShaderName);
+
+            int status_code;
+            string info;
+
+            int vertexObject = GL.CreateShader(ShaderType.VertexShader);
+            int fragmentObject = GL.CreateShader(ShaderType.FragmentShader);
+            shaderAsset.VertexObjectHandle = vertexObject;
+            shaderAsset.FragmentObjectHandle = fragmentObject;
+
+            GL.ShaderSource(vertexObject, vs);
+            GL.CompileShader(vertexObject);
+            GL.GetShaderInfoLog(vertexObject, out info);
+            GL.GetShader(vertexObject, ShaderParameter.CompileStatus, out status_code);
+
+            if (status_code != 1)
+                throw new ApplicationException(info);
+
+            GL.ShaderSource(fragmentObject, fs);
+            GL.CompileShader(fragmentObject);
+            GL.GetShaderInfoLog(fragmentObject, out info);
+            GL.GetShader(fragmentObject, ShaderParameter.CompileStatus, out status_code);
+
+            if (status_code != 1)
+                throw new ApplicationException(info);
+
+            int program = GL.CreateProgram();
+            GL.AttachShader(program, fragmentObject);
+            GL.AttachShader(program, vertexObject);
+            shaderAsset.ProgramHandle = program;
+
+            GL.BindAttribLocation(program, VertexAttribIndex.Vertex, "in_position");
+            GL.BindAttribLocation(program, VertexAttribIndex.Normal, "in_normal");
+            GL.BindAttribLocation(program, VertexAttribIndex.Uv, "in_uv");
+
+            GL.LinkProgram(program);
+
+            shaderAsset.ModelviewProjectionMatrixLocation = GL.GetUniformLocation(
+                program,
+                "modelview_projection_matrix");
+            Console.WriteLine($"modelview_projection_matrix: {shaderAsset.ModelviewProjectionMatrixLocation}");
+            shaderAsset.IsLoaded = true;
+        }
+
+        private void UnloadBlinnShaderAsset(BlinnShaderAsset shader)
+        {
+            this.UnloadShaderAsset(shader.BasicShader);
+        }
+
+        private void UnloadShaderAsset(BasicShaderAssetData shaderAsset)
+        {
+            if(shaderAsset.IsLoaded) {
+                //GL.DeleteProgram(shaderAsset.ProgramHandle);
+                GL.DeleteShader(shaderAsset.FragmentObjectHandle);
+                GL.DeleteShader(shaderAsset.VertexObjectHandle);
+            }
+            shaderAsset.IsLoaded = false;
+        }
   
 		public void Render()
 		{
@@ -117,12 +233,12 @@ namespace vissatellite.shared
             GL.LoadIdentity();
             GL.Ortho(-1.0, 1.0, -1.0, 1.0, 0.0, 4.0);
             GL.Begin(BeginMode.Triangles);
-            GL.Color3(Color.MidnightBlue);
-            GL.Vertex2(-1.0f, 1.0f);
-            GL.Color3(Color.SpringGreen);
-            GL.Vertex2(0.0f, -1.0f);
-            GL.Color3(Color.Ivory);
-            GL.Vertex2(1.0f, 1.0f);
+            //GL.Color3(Color.MidnightBlue);
+            //GL.Vertex2(-1.0f, 1.0f);
+            //GL.Color3(Color.SpringGreen);
+            //GL.Vertex2(0.0f, -1.0f);
+            //GL.Color3(Color.Ivory);
+            //GL.Vertex2(1.0f, 1.0f);
             GL.End();
 		}
     }
