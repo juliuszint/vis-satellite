@@ -1,7 +1,7 @@
 ﻿using AppKit;
 using Foundation;
 
-namespace VisSatellite
+namespace vissatellite.mac
 {
     [Register("AppDelegate")]
     public class AppDelegate : NSApplicationDelegate

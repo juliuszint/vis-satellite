@@ -7,7 +7,7 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Platform.MacOS;
 using System.Drawing;
 
-namespace VisSatellite
+namespace vissatellite.mac
 {
     public partial class MainWindow : NSWindow
     {

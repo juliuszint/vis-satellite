@@ -1,6 +1,6 @@
 ﻿using AppKit;
 
-namespace VisSatellite
+namespace vissatellite.mac
 {
     static class MainClass
     {

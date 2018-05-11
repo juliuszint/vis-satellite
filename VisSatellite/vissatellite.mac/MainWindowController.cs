@@ -3,7 +3,7 @@
 using Foundation;
 using AppKit;
 
-namespace VisSatellite
+namespace vissatellite.mac
 {
     public partial class MainWindowController : NSWindowController
     {
