@@ -13,7 +13,7 @@ namespace vissatellite.mac
     public partial class MainWindow : NSWindow
     {
 		public MonoMacGameView Game { get; set; }
-		public VisSatteliteGame GameLogic { get; set; }
+		public SatelliteUniverse GameLogic { get; set; }
 
         public MainWindow(IntPtr handle) : base(handle)
         {
@@ -30,7 +30,7 @@ namespace vissatellite.mac
 
 			// Create new Game View and replace the window content with it
             this.Game = new MonoMacGameView(ContentView.Frame);
-			GameLogic = new VisSatteliteGame();
+			GameLogic = new SatelliteUniverse();
             ContentView = Game;
 
             // Wire-up any required Game events

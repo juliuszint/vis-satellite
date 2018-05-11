@@ -9,6 +9,36 @@
     <Import_RootNamespace>vissatellite.shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)VisSatelliteGame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SatelliteUniverse.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Wavefront.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BaumGame.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)shader\Blinn_FS.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)shader\Blinn_VS.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)shader\Simple_FS.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)shader\Simple_VS.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)textures\brown.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)textures\empty_normal.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)textures\wall_normal.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)meshes\icosphere.obj" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)meshes\cube.obj" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)meshes\plane.obj" />
   </ItemGroup>
 </Project>
