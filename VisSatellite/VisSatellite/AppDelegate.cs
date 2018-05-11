@@ -5,10 +5,11 @@ namespace VisSatellite
 {
     [Register("AppDelegate")]
     public class AppDelegate : NSApplicationDelegate
-    {
-        public AppDelegate()
-        {
-        }
+    {        
+		public override bool ApplicationShouldTerminateAfterLastWindowClosed(NSApplication sender)
+		{
+			return true;
+		}
 
         public override void DidFinishLaunching(NSNotification notification)
         {
