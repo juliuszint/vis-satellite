@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Drawing;
+using System.Drawing.Imaging;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -7,6 +9,7 @@ namespace vissatellite
 {
 	public class SatelliteUniversum : GameWindow
 	{
+        private ImageAssetData colorTexture;
         private MeshAssetData sphereMeshAsset;
         private BasicShaderAssetData basicShaderAsset;
 
@@ -30,10 +33,54 @@ namespace vissatellite
             this.sphereMeshAsset.AssetName = "vissatellite.meshes.icosphere.obj";
             this.LoadMeshAsset(ref this.sphereMeshAsset);
 
+            this.colorTexture = new ImageAssetData();
+            this.colorTexture.AssetName = "vissatellite.textures.brown.jpg";
+            this.LoadImageAsset(ref this.colorTexture);
+
             this.basicShaderAsset = new BasicShaderAssetData();
             this.basicShaderAsset.VertexShaderName = "vissatellite.shader.Simple_VS.glsl";
             this.basicShaderAsset.FragmentShaderName = "vissatellite.shader.Simple_FS.glsl";
             this.LoadShaderAsset(ref this.basicShaderAsset);
+        }
+
+        private void LoadImageAsset(ref ImageAssetData asset)
+        {
+            if (asset.IsLoaded) return;
+            int textureHandle = GL.GenTexture();
+            GL.BindTexture(TextureTarget.Texture2D, textureHandle);
+            using(var imageStream = Utils.OpenEmbeddedResource(asset.AssetName)) {
+                Bitmap bmp = new Bitmap(imageStream);
+                int width = bmp.Width;
+                int height = bmp.Height;
+                BitmapData bmpData = bmp.LockBits(
+                        new Rectangle(0, 0, bmp.Width, bmp.Height),
+                        ImageLockMode.ReadOnly,
+                        System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+
+                GL.TexImage2D(
+                        TextureTarget.Texture2D,
+                        0,
+                        PixelInternalFormat.Rgba,
+                        bmpData.Width,
+                        bmpData.Height,
+                        0,
+                        OpenTK.Graphics.OpenGL.PixelFormat.Bgra,
+                        PixelType.UnsignedByte,
+                        bmpData.Scan0);
+
+                GL.TexParameter(
+                        TextureTarget.Texture2D,
+                        TextureParameterName.TextureMinFilter,
+                        (int)TextureMinFilter.Nearest);
+                GL.TexParameter(
+                        TextureTarget.Texture2D,
+                        TextureParameterName.TextureMagFilter,
+                        (int)TextureMinFilter.Nearest);
+                bmp.UnlockBits(bmpData);
+                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            }
+            asset.OpenGLHandle = textureHandle;
+            asset.IsLoaded = true;
         }
 
         private void LoadShaderAsset(ref BasicShaderAssetData shaderAsset)

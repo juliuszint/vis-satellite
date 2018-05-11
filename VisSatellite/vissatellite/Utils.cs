@@ -6,12 +6,18 @@ namespace vissatellite
 {
     public static class Utils
     {
+        public static Stream OpenEmbeddedResource(string resourceName)
+        {
+            var assembly = typeof(Utils).Assembly;
+            var resourceStream = assembly.GetManifestResourceStream(resourceName);
+            return resourceStream;
+        }
+
         public static string LoadEmbeddedResourceAsString(string resourceName)
         {
             string result = string.Empty;
-            var assembly = typeof(Utils).Assembly;
-            var resourceStream = assembly.GetManifestResourceStream(resourceName);
-            using(var reader = new StreamReader(resourceStream)) {
+            using(var stream = OpenEmbeddedResource(resourceName))
+            using(var reader = new StreamReader(stream)) {
                 result = reader.ReadToEnd();
             }
             return result;
