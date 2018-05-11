@@ -39,6 +39,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SatelliteUniversum.cs" />
     <Compile Include="Wavefront.cs" />
+    <Compile Include="Utils.cs" />
+    <Compile Include="DataTypes.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="OpenTK.dll.config" />
