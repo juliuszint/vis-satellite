@@ -133,7 +133,6 @@ namespace vissatellite
             shaderAsset.ModelviewProjectionMatrixLocation = GL.GetUniformLocation(
                 program,
                 "modelview_projection_matrix");
-            Console.WriteLine($"modelview_projection_matrix: {shaderAsset.ModelviewProjectionMatrixLocation}");
             shaderAsset.IsLoaded = true;
         }
 
@@ -174,20 +173,22 @@ namespace vissatellite
             int vertexBufferHandle;
             GL.GenBuffers(1, out vertexBufferHandle);
             GL.BindBuffer(BufferTarget.ArrayBuffer, vertexBufferHandle);
-            GL.BufferData(BufferTarget.ArrayBuffer,
-                          interleaved.Length  * sizeof(float),
-                          interleaved,
-                          BufferUsageHint.StaticDraw);
+            GL.BufferData(
+                    BufferTarget.ArrayBuffer,
+                    interleaved.Length  * sizeof(float),
+                    interleaved,
+                    BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             meshAsset.VertexBufferHandle = vertexBufferHandle;
 
             int indexBufferHandle;
             GL.GenBuffers(1, out indexBufferHandle);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, indexBufferHandle);
-            GL.BufferData(BufferTarget.ElementArrayBuffer,
-                          sizeof(uint) * planeMesh.Indices.Length,
-                          planeMesh.Indices,
-                          BufferUsageHint.StaticDraw);
+            GL.BufferData(
+                    BufferTarget.ElementArrayBuffer,
+                    sizeof(uint) * planeMesh.Indices.Length,
+                    planeMesh.Indices,
+                    BufferUsageHint.StaticDraw);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
             meshAsset.IndicesBufferHandle = indexBufferHandle;
 
@@ -203,37 +204,42 @@ namespace vissatellite
             GL.EnableVertexAttribArray(4);
 
             var stride = (4 * Vector3.SizeInBytes) + Vector2.SizeInBytes;
-            GL.VertexAttribPointer(VertexAttribIndex.Vertex,
-                                   3,
-                                   VertexAttribPointerType.Float,
-                                   true,
-                                   stride,
-                                   0);
+            GL.VertexAttribPointer(
+                    VertexAttribIndex.Vertex,
+                    3,
+                    VertexAttribPointerType.Float,
+                    true,
+                    stride,
+                    0);
 
-            GL.VertexAttribPointer(VertexAttribIndex.Normal,
-                                   3,
-                                   VertexAttribPointerType.Float,
-                                   true,
-                                   stride,
-                                   Vector3.SizeInBytes);
-            GL.VertexAttribPointer(VertexAttribIndex.Uv,
-                                   2,
-                                   VertexAttribPointerType.Float,
-                                   true,
-                                   stride,
-                                   2 * Vector3.SizeInBytes);
-            GL.VertexAttribPointer(VertexAttribIndex.Tangent,
-                                   3,
-                                   VertexAttribPointerType.Float,
-                                   true,
-                                   stride,
-                                   2 * Vector3.SizeInBytes + Vector2.SizeInBytes);
-            GL.VertexAttribPointer(VertexAttribIndex.Bitangent,
-                                   3,
-                                   VertexAttribPointerType.Float,
-                                   true,
-                                   stride,
-                                   3 * Vector3.SizeInBytes + Vector2.SizeInBytes);
+            GL.VertexAttribPointer(
+                    VertexAttribIndex.Normal,
+                    3,
+                    VertexAttribPointerType.Float,
+                    true,
+                    stride,
+                    Vector3.SizeInBytes);
+            GL.VertexAttribPointer(
+                    VertexAttribIndex.Uv,
+                    2,
+                    VertexAttribPointerType.Float,
+                    true,
+                    stride,
+                    2 * Vector3.SizeInBytes);
+            GL.VertexAttribPointer(
+                    VertexAttribIndex.Tangent,
+                    3,
+                    VertexAttribPointerType.Float,
+                    true,
+                    stride,
+                    2 * Vector3.SizeInBytes + Vector2.SizeInBytes);
+            GL.VertexAttribPointer(
+                    VertexAttribIndex.Bitangent,
+                    3,
+                    VertexAttribPointerType.Float,
+                    true,
+                    stride,
+                    3 * Vector3.SizeInBytes + Vector2.SizeInBytes);
             GL.BindVertexArray(0);
             meshAsset.VertexArrayObjectHandle = vertexArrayObjectHandle;
             meshAsset.IsLoaded = true;
@@ -277,6 +283,35 @@ namespace vissatellite
 
         protected override void OnUnload(EventArgs e)
         {
+            this.UnloadImageAsset(this.colorTexture);
+            this.UnloadShaderAsset(this.basicShaderAsset);
+            this.UnloadMeshData(this.sphereMeshAsset);
+        }
+
+        private void UnloadShaderAsset(BasicShaderAssetData shaderAsset)
+        {
+            if(shaderAsset.IsLoaded) {
+                GL.DeleteProgram(shaderAsset.ProgramHandle);
+                GL.DeleteShader(shaderAsset.FragmentObjectHandle);
+                GL.DeleteShader(shaderAsset.VertexObjectHandle);
+            }
+            shaderAsset.IsLoaded = false;
+        }
+
+        private void UnloadImageAsset(ImageAssetData asset)
+        {
+            if(asset.IsLoaded) {
+                GL.DeleteTexture(asset.OpenGLHandle);
+            }
+        }
+
+        private void UnloadMeshData(MeshAssetData meshAsset)
+        {
+            if(meshAsset.IsLoaded) {
+                GL.DeleteVertexArray(meshAsset.VertexArrayObjectHandle);
+                GL.DeleteBuffer(meshAsset.VertexBufferHandle);
+                GL.DeleteBuffer(meshAsset.IndicesBufferHandle);
+            }
         }
 
         protected override void OnResize(EventArgs e)
