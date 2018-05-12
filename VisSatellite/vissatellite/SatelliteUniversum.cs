@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -12,6 +10,7 @@ namespace vissatellite
         private ImageAssetData colorTexture;
         private MeshAssetData sphereMeshAsset;
         private BasicShaderAssetData basicShaderAsset;
+        private CameraData cameraData;
 
 		public SatelliteUniversum(int width, int height) : base(
                 width,
@@ -41,6 +40,11 @@ namespace vissatellite
             this.basicShaderAsset.VertexShaderName = "vissatellite.shader.Simple_VS.glsl";
             this.basicShaderAsset.FragmentShaderName = "vissatellite.shader.Simple_FS.glsl";
             this.LoadShaderAsset(ref this.basicShaderAsset);
+
+            this.cameraData.Transformation = Matrix4.LookAt(
+                    new Vector3(0, 0, 20),
+                    new Vector3(0, 0, 0),
+                    new Vector3(0, 1, 0));
         }
 
         private void LoadImageAsset(ref ImageAssetData asset)
@@ -48,37 +52,37 @@ namespace vissatellite
             if (asset.IsLoaded) return;
             int textureHandle = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, textureHandle);
-            using(var imageStream = Utils.OpenEmbeddedResource(asset.AssetName)) {
-                Bitmap bmp = new Bitmap(imageStream);
-                int width = bmp.Width;
-                int height = bmp.Height;
-                BitmapData bmpData = bmp.LockBits(
-                        new Rectangle(0, 0, bmp.Width, bmp.Height),
-                        ImageLockMode.ReadOnly,
-                        System.Drawing.Imaging.PixelFormat.Format32bppArgb);
 
-                GL.TexImage2D(
-                        TextureTarget.Texture2D,
-                        0,
-                        PixelInternalFormat.Rgba,
-                        bmpData.Width,
-                        bmpData.Height,
-                        0,
-                        OpenTK.Graphics.OpenGL.PixelFormat.Bgra,
-                        PixelType.UnsignedByte,
-                        bmpData.Scan0);
+            var width = 1;
+            var height = 1;
+            var imageData = new byte[] {
+                0xFF,
+                0x00,
+                0x00,
+                0x00
+            };
 
-                GL.TexParameter(
-                        TextureTarget.Texture2D,
-                        TextureParameterName.TextureMinFilter,
-                        (int)TextureMinFilter.Nearest);
-                GL.TexParameter(
-                        TextureTarget.Texture2D,
-                        TextureParameterName.TextureMagFilter,
-                        (int)TextureMinFilter.Nearest);
-                bmp.UnlockBits(bmpData);
-                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
-            }
+            GL.TexImage2D(
+                    TextureTarget.Texture2D,
+                    0,
+                    PixelInternalFormat.Rgba,
+                    width,
+                    height,
+                    0,
+                    PixelFormat.Bgra,
+                    PixelType.UnsignedByte,
+                    imageData);
+
+            GL.TexParameter(
+                    TextureTarget.Texture2D,
+                    TextureParameterName.TextureMinFilter,
+                    (int)TextureMinFilter.Nearest);
+            GL.TexParameter(
+                    TextureTarget.Texture2D,
+                    TextureParameterName.TextureMagFilter,
+                    (int)TextureMinFilter.Nearest);
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+
             asset.OpenGLHandle = textureHandle;
             asset.IsLoaded = true;
         }
@@ -235,19 +239,58 @@ namespace vissatellite
             meshAsset.IsLoaded = true;
         }
 
+        protected override void OnRenderFrame(FrameEventArgs e)
+        {
+            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            RenderWithBasicShader(ref this.sphereMeshAsset, ref this.colorTexture, new Vector3(0, 0, 0));
+            this.SwapBuffers();
+        }
+
+        private void RenderWithBasicShader(
+            ref MeshAssetData mesh,
+            ref ImageAssetData texture,
+            Vector3 location)
+        {
+            GL.BindTexture(TextureTarget.Texture2D, texture.OpenGLHandle);
+            GL.BindVertexArray(mesh.VertexArrayObjectHandle);
+            GL.UseProgram(basicShaderAsset.ProgramHandle);
+
+            Matrix4 modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(location);
+            var modelViewProjection =
+                modelMatrix * 
+                this.cameraData.Transformation * 
+                this.cameraData.PerspectiveProjection;
+
+            GL.UniformMatrix4(
+                basicShaderAsset.ModelviewProjectionMatrixLocation,
+                false,
+                ref modelViewProjection);
+
+            GL.DrawElements(
+                    PrimitiveType.Triangles,
+                    mesh.IndicesCount,
+                    DrawElementsType.UnsignedInt,
+                    IntPtr.Zero);
+
+            GL.BindVertexArray(0);
+        }
+
         protected override void OnUnload(EventArgs e)
         {
         }
 
         protected override void OnResize(EventArgs e)
         {
+            var fov = 60;
             GL.Viewport(0, 0, Width, Height);
+            float aspectRatio = Width / (float)Height;
+            Matrix4.CreatePerspectiveFieldOfView(
+                    (float)(fov * Math.PI / 180.0f),
+                    aspectRatio,
+                    1,
+                    100,
+                    out this.cameraData.PerspectiveProjection);
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e)
-        {
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            this.SwapBuffers();
-        }
 	}
 }
