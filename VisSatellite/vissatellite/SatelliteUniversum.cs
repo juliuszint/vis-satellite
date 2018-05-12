@@ -7,6 +7,7 @@ namespace vissatellite
 {
 	public class SatelliteUniversum : GameWindow
 	{
+        private double elapsedSeconds;
         private ImageAssetData colorTexture;
         private MeshAssetData sphereMeshAsset;
         private BasicShaderAssetData basicShaderAsset;
@@ -247,21 +248,26 @@ namespace vissatellite
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
+            this.elapsedSeconds += e.Time;
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            RenderWithBasicShader(ref this.sphereMeshAsset, ref this.colorTexture, new Vector3(0, 0, 0));
+            for(int i = 0; i < 3; i++) {
+                var modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(i * 2.5f, 0, 0);
+                var rotation = (float)(((this.elapsedSeconds % 2.0) / 2.0) * 2 * Math.PI);
+                modelMatrix *= Matrix4.CreateRotationZ(rotation);
+                RenderWithBasicShader(ref this.sphereMeshAsset, ref this.colorTexture, modelMatrix);
+            }
             this.SwapBuffers();
         }
 
         private void RenderWithBasicShader(
             ref MeshAssetData mesh,
             ref ImageAssetData texture,
-            Vector3 location)
+            Matrix4 modelMatrix)
         {
             GL.BindTexture(TextureTarget.Texture2D, texture.OpenGLHandle);
             GL.BindVertexArray(mesh.VertexArrayObjectHandle);
             GL.UseProgram(basicShaderAsset.ProgramHandle);
 
-            Matrix4 modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(location);
             var modelViewProjection =
                 modelMatrix * 
                 this.cameraData.Transformation * 
