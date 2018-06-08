@@ -82,4 +82,17 @@ namespace vissatellite
         public Matrix4 Transformation;
         public Matrix4 PerspectiveProjection;
     }
+
+    public class SimData
+    {
+        public float TotalSimulationTime;
+        public float SimulationSpeed;
+
+        public SatelliteSimData[] Satellites;
+    }
+
+    public class SatelliteSimData
+    {
+        public Vector3 Position;
+    }
 }

@@ -2,11 +2,11 @@
 {
     public class Program
     {
-		private static SatelliteUniversum gameWindow;
+		private static SatelliteUniverse gameWindow;
 
         public static void Main(string[] args)
         {
-			gameWindow = new SatelliteUniversum(1280, 720);
+			gameWindow = new SatelliteUniverse(1280, 720);
 			gameWindow.Run(60.0);
         }
     }

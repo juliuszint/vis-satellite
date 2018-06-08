@@ -5,15 +5,21 @@ using OpenTK.Graphics.OpenGL;
 
 namespace vissatellite
 {
-	public class SatelliteUniversum : GameWindow
+	public class SatelliteUniverse : GameWindow
 	{
         private double elapsedSeconds;
         private ImageAssetData colorTexture;
+        private ImageAssetData normalTexture;
         private MeshAssetData sphereMeshAsset;
-        private BasicShaderAssetData basicShaderAsset;
         private CameraData cameraData;
 
-		public SatelliteUniversum(int width, int height) : base(
+        private BasicShaderAssetData basicShaderAsset;
+        private BlinnShaderAsset blinnShader;
+        private Vector3 ambientLightDirection;
+        private SimData simulationData;
+
+
+		public SatelliteUniverse(int width, int height) : base(
                 width,
                 height,
                 GraphicsMode.Default,
@@ -30,22 +36,39 @@ namespace vissatellite
             Console.WriteLine($"OpenGL Shader Language Version: {openGlShaderLanguageVersion}");
 
             this.sphereMeshAsset = new MeshAssetData();
-            this.sphereMeshAsset.AssetName = "vissatellite.meshes.icosphere.obj";
+            this.sphereMeshAsset.AssetName = "vissatellite.meshes.sphere.obj";
             this.LoadMeshAsset(ref this.sphereMeshAsset);
 
             this.colorTexture = new ImageAssetData();
-            this.colorTexture.AssetName = "vissatellite.textures.brown.jpg";
+            this.colorTexture.AssetName = "vissatellite.textures.earth.jpg";
             this.LoadImageAsset(ref this.colorTexture);
+
+            this.normalTexture = new ImageAssetData();
+            this.normalTexture.AssetName = "vissatellite.textures.empty_normal.jpg";
+            this.LoadImageAsset(ref this.normalTexture);
 
             this.basicShaderAsset = new BasicShaderAssetData();
             this.basicShaderAsset.VertexShaderName = "vissatellite.shader.Simple_VS.glsl";
             this.basicShaderAsset.FragmentShaderName = "vissatellite.shader.Simple_FS.glsl";
             this.LoadShaderAsset(ref this.basicShaderAsset);
 
+            this.blinnShader = new BlinnShaderAsset();
+            this.blinnShader.BasicShader.VertexShaderName = "vissatellite.shader.Blinn_VS.glsl";
+            this.blinnShader.BasicShader.FragmentShaderName = "vissatellite.shader.Blinn_FS.glsl";
+            this.LoadBlinnShaderAsset(ref this.blinnShader);
+
+            var cameraPosition = new Vector3(0, 0, 20);
             this.cameraData.Transformation = Matrix4.LookAt(
-                    new Vector3(0, 0, 20),
+                    cameraPosition,
                     new Vector3(0, 0, 0),
                     new Vector3(0, 1, 0));
+            this.cameraData.Position = cameraPosition;
+
+            this.ambientLightDirection = new Vector3(0, -1, 0);
+            this.ambientLightDirection.Normalize();
+            this.InitSimulationData();
+
+            GL.Enable(EnableCap.DepthTest);
         }
 
         private void LoadImageAsset(ref ImageAssetData asset)
@@ -54,15 +77,27 @@ namespace vissatellite
             int textureHandle = GL.GenTexture();
             GL.BindTexture(TextureTarget.Texture2D, textureHandle);
 
-            var width = 1;
-            var height = 1;
-            var imageData = new byte[] {
-                0xFF,
-                0x00,
-                0x00,
-                0x00
-            };
-
+            var width = 0;
+            var height = 0;
+            byte[] imageData = null;
+            var currentIndex = 0;
+            using(var stream = Utils.OpenEmbeddedResource(asset.AssetName)){
+                using(var img = SixLabors.ImageSharp.Image.Load(stream)) {
+                    imageData = new byte[img.Width * img.Height * 4];
+                    width = img.Width;
+                    height = img.Height;
+                    for (int x = 0; x < img.Width; x++) {
+                        for (int y = 0; y < img.Height; y++) {
+                            var pixelValue = img[x, y];
+                            imageData[currentIndex++] = pixelValue.B;
+                            imageData[currentIndex++] = pixelValue.G;
+                            imageData[currentIndex++] = pixelValue.R;
+                            imageData[currentIndex++] = pixelValue.A;
+                        }
+                    }
+                }
+            }
+            
             GL.TexImage2D(
                     TextureTarget.Texture2D,
                     0,
@@ -86,6 +121,28 @@ namespace vissatellite
 
             asset.OpenGLHandle = textureHandle;
             asset.IsLoaded = true;
+        }
+
+        private void LoadBlinnShaderAsset(ref BlinnShaderAsset shader)
+        {
+            this.LoadShaderAsset(ref shader.BasicShader);
+            GL.BindAttribLocation(shader.BasicShader.ProgramHandle, VertexAttribIndex.Tangent, "in_tangent");
+            GL.BindAttribLocation(shader.BasicShader.ProgramHandle, VertexAttribIndex.Bitangent, "in_bitangent");
+
+            shader.ModelMatrixLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "model_matrix");
+            shader.MaterialShininessLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "specular_shininess");
+            shader.LightDirectionLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "light_direction");
+            shader.LightAmbientColorLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "light_ambient_color");
+            shader.LightDiffuseColorLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "light_diffuse_color");
+            shader.LightSpecularColorLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "light_specular_color");
+            shader.CameraPositionLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "camera_position");
+            shader.ColorTextureLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "color_texture");
+            shader.NormalTextureLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "normalmap_texture");
+        }
+
+        private void UnloadBlinnShaderAsset(BlinnShaderAsset shader)
+        {
+            this.UnloadShaderAsset(shader.BasicShader);
         }
 
         private void LoadShaderAsset(ref BasicShaderAssetData shaderAsset)
@@ -249,14 +306,73 @@ namespace vissatellite
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             this.elapsedSeconds += e.Time;
+            this.DoSimulation(e.Time);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            for(int i = 0; i < 3; i++) {
-                var modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(i * 2.5f, 0, 0);
-                var rotation = (float)(((this.elapsedSeconds % 2.0) / 2.0) * 2 * Math.PI);
-                modelMatrix *= Matrix4.CreateRotationZ(rotation);
+#if JULIUS
+
+            var fullRotationTime = 6;
+            var modelMatrix = Matrix4.Identity;
+            modelMatrix *= Matrix4.CreateScale(6.0f);
+            var rotation = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
+            modelMatrix *= Matrix4.CreateRotationX(rotation);
+            RenderWithBasicShader(ref this.sphereMeshAsset, ref this.colorTexture, modelMatrix);
+            
+//                RenderWithBlinn(
+//                    ref this.sphereMeshAsset,
+//                    ref this.colorTexture,
+//                    ref this.normalTexture,
+//                    new Vector3 (i * 2.5f, 0, 0));
+
+#else
+            for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
+                var satellite = this.simulationData.Satellites[i];
+                var modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
                 RenderWithBasicShader(ref this.sphereMeshAsset, ref this.colorTexture, modelMatrix);
             }
+#endif
+
             this.SwapBuffers();
+        }
+
+        private void RenderWithBlinn(
+            ref MeshAssetData mesh,
+            ref ImageAssetData colorTexture,
+            ref ImageAssetData normalTexture,
+            Vector3 location)
+        {
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.BindTexture(TextureTarget.Texture2D, colorTexture.OpenGLHandle);
+            GL.ActiveTexture(TextureUnit.Texture1);
+            GL.BindTexture(TextureTarget.Texture2D, normalTexture.OpenGLHandle);
+
+            GL.BindVertexArray(mesh.VertexArrayObjectHandle);
+            GL.UseProgram(blinnShader.BasicShader.ProgramHandle);
+
+            Matrix4 modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(location);
+            var modelViewProjection = modelMatrix * this.cameraData.Transformation * this.cameraData.PerspectiveProjection;
+            GL.UniformMatrix4(
+                blinnShader.BasicShader.ModelviewProjectionMatrixLocation,
+                false,
+                ref modelViewProjection);
+
+            GL.UniformMatrix4(blinnShader.ModelMatrixLocation, false, ref modelMatrix);
+            GL.Uniform1(blinnShader.ColorTextureLocation, 0);
+            GL.Uniform1(blinnShader.NormalTextureLocation, 1);
+            GL.Uniform1(blinnShader.MaterialShininessLocation, 2.0f);
+            GL.Uniform3(blinnShader.LightDirectionLocation, this.ambientLightDirection);
+
+            GL.Uniform4(blinnShader.LightAmbientColorLocation, new Vector4(0.6f, 0.6f, 0.6f, 0));
+            GL.Uniform4(blinnShader.LightDiffuseColorLocation, new Vector4(0.8f, 0.8f, 0.8f, 0));
+            GL.Uniform4(blinnShader.LightSpecularColorLocation, new Vector4(0.0f, 0.0f, 0.0f, 0));
+            GL.Uniform4(blinnShader.CameraPositionLocation, new Vector4(this.cameraData.Position, 1));
+
+            GL.DrawElements(PrimitiveType.Triangles,
+                            mesh.IndicesCount,
+                            DrawElementsType.UnsignedInt,
+                            IntPtr.Zero);
+            GL.BindVertexArray(0);
+            GL.ActiveTexture(TextureUnit.Texture0);
+
         }
 
         private void RenderWithBasicShader(
@@ -333,5 +449,26 @@ namespace vissatellite
                     out this.cameraData.PerspectiveProjection);
         }
 
+        //
+        // simulation stuff
+        //
+
+        private void InitSimulationData() {
+            this.simulationData = new SimData();
+            this.simulationData.TotalSimulationTime = 0;
+            this.simulationData.SimulationSpeed = 1.0f;
+            this.simulationData.Satellites = new SatelliteSimData[10];
+            for(int i = 0; i < 10; i++) {
+                this.simulationData.Satellites[i] = new SatelliteSimData();
+                this.simulationData.Satellites[i].Position = new Vector3(i, 0, 0);
+            }
+        }
+
+        private void DoSimulation(double fTimeDelta) 
+        {
+            for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
+                var satellite = this.simulationData.Satellites[i];
+            }
+        }
 	}
 }
