@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -557,22 +559,71 @@ namespace vissatellite
         // simulation stuff
         //
 
-        private void InitSimulationData() {
+        private void InitSimulationData()
+        {
             this.simulationData = new SimData();
             this.simulationData.TotalSimulationTime = 0;
             this.simulationData.SimulationSpeed = 1.0f;
-            this.simulationData.Satellites = new SatelliteSimData[10];
-            for(int i = 0; i < 10; i++) {
-                this.simulationData.Satellites[i] = new SatelliteSimData();
-                this.simulationData.Satellites[i].Position = new Vector3(i, 0, 0);
+
+            var satelites = new List<SatelliteSimData>();
+            var satDataStream = Utils.OpenEmbeddedResource("vissatellite.simdata.UCS_Satellite_Database_9-1-2017.txt");
+
+            var streamReader = new System.IO.StreamReader(satDataStream);
+            streamReader.ReadLine();
+            string line;
+            while ((line = streamReader.ReadLine()) != null)
+            {
+
+                string[] elements = line.Split('\t');
+
+                var satelite = new SatelliteSimData();
+                satelite.Name = elements[0];
+
+
+                //Read all the data we have
+                if (!elements[9].Equals(""))
+                    satelite.LongitudeOfGEO = float.Parse(elements[9], CultureInfo.InvariantCulture);
+
+                satelite.Perigee = float.Parse(elements[10].Substring(1, elements[10].Length - 2).Replace(",", ""));
+                satelite.Apogee = float.Parse(elements[11].Substring(1, elements[11].Length - 2).Replace(",", ""));
+                satelite.Eccentricity = float.Parse(elements[12], CultureInfo.InvariantCulture);
+                satelite.Inclenation = float.Parse(elements[13], CultureInfo.InvariantCulture);
+
+                satelite.Position = new Vector3(satelites.Count, 0, 0);
+                satelites.Add(satelite);
+
+                //Calculated what we need
+                satelite.SemiMajorAxis = (satelite.Apogee + satelite.Perigee) / 2;
+
+                //Generate random values for needed object elements that are not in the dataset
+                satelite.LongitudeOfAscendingNode = 0;
+                satelite.ArgumentOfPeriapsis = 0;
+                satelite.MeanAnomaly0 = 0;
+
+
+                //TODO: remove temp hack for not loading all satelites
+                if (satelites.Count > 20)
+                    break;
             }
+
+
+            this.simulationData.Satellites = satelites.ToArray();
         }
 
-        private void DoSimulation(double fTimeDelta) 
+        private void DoSimulation(double fTimeDelta)
         {
-            for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
+            //TODO mue for earth
+            float mue = 0;
+            for (int i = 0; i < this.simulationData.Satellites.Length; i++)
+            {
                 var satellite = this.simulationData.Satellites[i];
+
+                double meanAnomay = satellite.MeanAnomaly0 + (fTimeDelta * Math.Sqrt(mue / Math.Pow(satellite.SemiMajorAxis, 3)));
+
+
+
+
             }
         }
-	}
+    }
 }

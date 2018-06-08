@@ -98,6 +98,19 @@ namespace vissatellite
     public class SatelliteSimData
     {
         public Vector3 Position;
+
+        public string Name;
+        public float Apogee;
+        public float Perigee;
+        public float LongitudeOfGEO;
+
+        public float Eccentricity; //e
+        public float SemiMajorAxis; //a
+
+        public float Inclenation; //i
+        public float LongitudeOfAscendingNode; //Ω
+        public float ArgumentOfPeriapsis; //ω
+        public float MeanAnomaly0; //M0
     }
 
     public struct KeyboardInput
