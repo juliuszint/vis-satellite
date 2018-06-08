@@ -307,7 +307,7 @@ namespace vissatellite
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             this.elapsedSeconds += e.Time;
-            this.MoveCamera(ref this.cameraData, (float)e.Time, 6.0f, 1.0f);
+            this.MoveCamera(ref this.cameraData, (float)e.Time, 6.0f, 0.3f);
             this.DoSimulation(e.Time);
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
@@ -415,6 +415,14 @@ namespace vissatellite
                 this.keyboardInput.S = false;
             else if(e.Key == Key.D) 
                 this.keyboardInput.D = false;
+            else if(e.Key == Key.Up) 
+                this.keyboardInput.UpArrow = false;
+            else if(e.Key == Key.Down) 
+                this.keyboardInput.DownArrow = false;
+            else if(e.Key == Key.Left) 
+                this.keyboardInput.LeftArrow = false;
+            else if(e.Key == Key.Right) 
+                this.keyboardInput.RightArrow = false;
             base.OnKeyDown(e);
         }
 
@@ -428,6 +436,14 @@ namespace vissatellite
                 this.keyboardInput.S = true;
             else if(e.Key == Key.D) 
                 this.keyboardInput.D = true;
+            else if(e.Key == Key.Up) 
+                this.keyboardInput.UpArrow = true;
+            else if(e.Key == Key.Down) 
+                this.keyboardInput.DownArrow = true;
+            else if(e.Key == Key.Left) 
+                this.keyboardInput.LeftArrow = true;
+            else if(e.Key == Key.Right) 
+                this.keyboardInput.RightArrow = true;
             base.OnKeyDown(e);
         }
 
@@ -447,13 +463,39 @@ namespace vissatellite
             if(this.keyboardInput.S) {
                 cameraData.Eye += -cameraData.Direction * translationSens * fTimeDelta;
             }
+            
+            // rotation
+            float angle = (float)(Math.PI * fTimeDelta * rotationSens);
+            if(this.keyboardInput.UpArrow) {
+                var rotationMatrix = Matrix4.CreateFromAxisAngle(directionOrtho, angle);
+                var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
+                cameraData.Direction = newDirection4.Xyz;
+            }
+            if(this.keyboardInput.DownArrow) {
+                var rotationMatrix = Matrix4.CreateFromAxisAngle(directionOrtho, -angle);
+                var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
+                cameraData.Direction = newDirection4.Xyz;
+            }
             if(this.keyboardInput.A) {
-                cameraData.Eye += directionOrtho * translationSens * fTimeDelta;
+                var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Up, angle);
+                var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
+                cameraData.Direction = newDirection4.Xyz;
             }
             if(this.keyboardInput.D) {
-                cameraData.Eye += -directionOrtho * translationSens * fTimeDelta;
+                var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Up, -angle);
+                var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
+                cameraData.Direction = newDirection4.Xyz;
             }
-            // rotation
+            if(this.keyboardInput.LeftArrow) {
+                var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Direction, -angle);
+                var newUp4 = new Vector4(cameraData.Up) * rotationMatrix;
+                cameraData.Up = newUp4.Xyz;
+            }
+            if(this.keyboardInput.RightArrow) {
+                var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Direction, angle);
+                var newUp4 = new Vector4(cameraData.Up) * rotationMatrix;
+                cameraData.Up = newUp4.Xyz;
+            }
             this.UpdateCameraTransformation(ref this.cameraData);
         }
 
