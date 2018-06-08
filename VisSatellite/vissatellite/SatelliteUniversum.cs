@@ -330,7 +330,6 @@ namespace vissatellite
                 RenderWithBasicShader(ref this.sphereMeshAsset, ref this.colorTexture, modelMatrix);
             }
 #endif
-
             this.SwapBuffers();
         }
 
