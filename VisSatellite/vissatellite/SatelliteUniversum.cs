@@ -2,6 +2,7 @@
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using OpenTK.Input;
 
 namespace vissatellite
 {
@@ -17,7 +18,7 @@ namespace vissatellite
         private BlinnShaderAsset blinnShader;
         private Vector3 ambientLightDirection;
         private SimData simulationData;
-
+        private KeyboardInput keyboardInput;
 
 		public SatelliteUniverse(int width, int height) : base(
                 width,
@@ -57,16 +58,16 @@ namespace vissatellite
             this.blinnShader.BasicShader.FragmentShaderName = "vissatellite.shader.Blinn_FS.glsl";
             this.LoadBlinnShaderAsset(ref this.blinnShader);
 
-            var cameraPosition = new Vector3(0, 0, 20);
-            this.cameraData.Transformation = Matrix4.LookAt(
-                    cameraPosition,
-                    new Vector3(0, 0, 0),
-                    new Vector3(0, 1, 0));
-            this.cameraData.Position = cameraPosition;
+            this.cameraData.Eye = new Vector3(0, 0, 20);
+            this.cameraData.Up = new Vector3(0, 1, 0);
+            this.cameraData.Direction = new Vector3(0, 0, -1);
+            UpdateCameraTransformation(ref this.cameraData);
 
             this.ambientLightDirection = new Vector3(0, -1, 0);
             this.ambientLightDirection.Normalize();
             this.InitSimulationData();
+
+            this.keyboardInput = new KeyboardInput();
 
             GL.Enable(EnableCap.DepthTest);
         }
@@ -306,7 +307,9 @@ namespace vissatellite
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             this.elapsedSeconds += e.Time;
+            this.MoveCamera(ref this.cameraData, (float)e.Time, 6.0f, 1.0f);
             this.DoSimulation(e.Time);
+
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 #if JULIUS
 
@@ -363,7 +366,7 @@ namespace vissatellite
             GL.Uniform4(blinnShader.LightAmbientColorLocation, new Vector4(0.6f, 0.6f, 0.6f, 0));
             GL.Uniform4(blinnShader.LightDiffuseColorLocation, new Vector4(0.8f, 0.8f, 0.8f, 0));
             GL.Uniform4(blinnShader.LightSpecularColorLocation, new Vector4(0.0f, 0.0f, 0.0f, 0));
-            GL.Uniform4(blinnShader.CameraPositionLocation, new Vector4(this.cameraData.Position, 1));
+            GL.Uniform4(blinnShader.CameraPositionLocation, new Vector4(this.cameraData.Eye, 1));
 
             GL.DrawElements(PrimitiveType.Triangles,
                             mesh.IndicesCount,
@@ -400,6 +403,58 @@ namespace vissatellite
                     IntPtr.Zero);
 
             GL.BindVertexArray(0);
+        }
+
+        protected override void OnKeyUp(KeyboardKeyEventArgs e)
+        {
+            if (e.Key == Key.W) 
+                this.keyboardInput.W = false;
+            else if(e.Key == Key.A) 
+                this.keyboardInput.A = false;
+            else if(e.Key == Key.S) 
+                this.keyboardInput.S = false;
+            else if(e.Key == Key.D) 
+                this.keyboardInput.D = false;
+            base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyDown(KeyboardKeyEventArgs e)
+        {
+            if (e.Key == Key.W) 
+                this.keyboardInput.W = true;
+            else if(e.Key == Key.A)
+                this.keyboardInput.A = true;
+            else if(e.Key == Key.S) 
+                this.keyboardInput.S = true;
+            else if(e.Key == Key.D) 
+                this.keyboardInput.D = true;
+            base.OnKeyDown(e);
+        }
+
+        private void MoveCamera(
+                ref CameraData cameraData,
+                float fTimeDelta,
+                float translationSens,
+                float rotationSens)
+        {
+            var directionOrtho = Vector3.Cross(cameraData.Up, cameraData.Direction);
+            directionOrtho.Normalize();
+
+            // translation
+            if(this.keyboardInput.W) {
+                cameraData.Eye += cameraData.Direction * translationSens * fTimeDelta;
+            }
+            if(this.keyboardInput.S) {
+                cameraData.Eye += -cameraData.Direction * translationSens * fTimeDelta;
+            }
+            if(this.keyboardInput.A) {
+                cameraData.Eye += directionOrtho * translationSens * fTimeDelta;
+            }
+            if(this.keyboardInput.D) {
+                cameraData.Eye += -directionOrtho * translationSens * fTimeDelta;
+            }
+            // rotation
+            this.UpdateCameraTransformation(ref this.cameraData);
         }
 
         protected override void OnUnload(EventArgs e)
@@ -446,6 +501,14 @@ namespace vissatellite
                     1,
                     100,
                     out this.cameraData.PerspectiveProjection);
+        }
+
+        private void UpdateCameraTransformation(ref CameraData cameraData)
+        {
+            this.cameraData.Transformation = Matrix4.LookAt(
+                    cameraData.Eye,
+                    cameraData.Eye + cameraData.Direction,
+                    cameraData.Up);
         }
 
         //

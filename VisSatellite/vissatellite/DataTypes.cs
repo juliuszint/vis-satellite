@@ -75,12 +75,16 @@ namespace vissatellite
 
     public struct CameraData
     {
-        public float XAngle;
-        public float YAngle;
-        public Vector3 Position;
-
-        public Matrix4 Transformation;
+        // constant
         public Matrix4 PerspectiveProjection;
+
+        // moving with mouse and cursor
+        public Vector3 Eye;
+        public Vector3 Up;
+        public Vector3 Direction;
+
+        // calculated from previous values
+        public Matrix4 Transformation;
     }
 
     public class SimData
@@ -94,5 +98,18 @@ namespace vissatellite
     public class SatelliteSimData
     {
         public Vector3 Position;
+    }
+
+    public struct KeyboardInput
+    {
+        public bool W;
+        public bool A;
+        public bool S;
+        public bool D;
+
+        public bool LeftArrow;
+        public bool UpArrow;
+        public bool DownArrow;
+        public bool RightArrow;
     }
 }
