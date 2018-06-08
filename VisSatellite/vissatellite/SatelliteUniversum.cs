@@ -12,8 +12,10 @@ namespace vissatellite
 	{
         private double elapsedSeconds;
         private ImageAssetData colorTexture;
+        private ImageAssetData satelliteTexture;
         private ImageAssetData normalTexture;
         private MeshAssetData sphereMeshAsset;
+        private MeshAssetData satelliteMeshAsset;
         private CameraData cameraData;
 
         private BasicShaderAssetData basicShaderAsset;
@@ -42,9 +44,17 @@ namespace vissatellite
             this.sphereMeshAsset.AssetName = "vissatellite.meshes.sphere.obj";
             this.LoadMeshAsset(ref this.sphereMeshAsset);
 
+            this.satelliteMeshAsset = new MeshAssetData();
+            this.satelliteMeshAsset.AssetName = "vissatellite.meshes.satellite.obj";
+            this.LoadMeshAsset(ref this.satelliteMeshAsset);
+
             this.colorTexture = new ImageAssetData();
             this.colorTexture.AssetName = "vissatellite.textures.earth.jpg";
             this.LoadImageAsset(ref this.colorTexture);
+
+            this.satelliteTexture = new ImageAssetData();
+            this.satelliteTexture.AssetName = "vissatellite.textures.satellite_texture.jpg";
+            this.LoadImageAsset(ref this.satelliteTexture);
 
             this.normalTexture = new ImageAssetData();
             this.normalTexture.AssetName = "vissatellite.textures.empty_normal.jpg";
@@ -319,8 +329,8 @@ namespace vissatellite
             var modelMatrix = Matrix4.Identity;
             modelMatrix *= Matrix4.CreateScale(6.0f);
             var rotation = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
-            modelMatrix *= Matrix4.CreateRotationX(rotation);
-            RenderWithBasicShader(ref this.sphereMeshAsset, ref this.colorTexture, modelMatrix);
+            modelMatrix *= Matrix4.CreateRotationY(rotation);
+            RenderWithBasicShader(ref this.satelliteMeshAsset, ref this.satelliteTexture, modelMatrix);
             
 //                RenderWithBlinn(
 //                    ref this.sphereMeshAsset,

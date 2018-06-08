@@ -162,6 +162,8 @@
     <EmbeddedResource Include="textures\wall_normal.png" />
     <EmbeddedResource Include="textures\earth.jpg" />
     <EmbeddedResource Include="meshes\sphere.obj" />
+    <EmbeddedResource Include="meshes\satellite.obj" />
+    <EmbeddedResource Include="textures\satellite_texture.jpg" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="simdata\UCS_Satellite_Database_9-1-2017.txt" />
