@@ -336,18 +336,22 @@ namespace vissatellite
                 Matrix4.CreateScale(1) * 
                 Matrix4.CreateTranslation(7, 0, 0) * 
                 Matrix4.CreateRotationY(rotationAngleRad);
-            RenderWithBasicShader(ref this.satelliteMeshAsset, ref this.satelliteTexture, satelliteMatrix);
+            //RenderWithBasicShader(ref this.satelliteMeshAsset, ref this.satelliteTexture, satelliteMatrix);
+            RenderWithBlinn(
+                ref this.satelliteMeshAsset,
+                ref this.satelliteTexture,
+                ref this.normalTexture,
+                satelliteMatrix);
             var earthMatrix = 
                 Matrix4.Identity * 
                 Matrix4.CreateRotationY(rotationAngleRad) * 
-                Matrix4.CreateScale(6.0f);
-            RenderWithBasicShader(ref this.sphereMeshAsset, ref this.earthColorTexture, earthMatrix);
-            
-//                RenderWithBlinn(
-//                    ref this.sphereMeshAsset,
-//                    ref this.earthColorTexture,
-//                    ref this.normalTexture,
-//                    new Vector3 (i * 2.5f, 0, 0));
+                Matrix4.CreateScale(3.0f);
+            //RenderWithBasicShader(ref this.sphereMeshAsset, ref this.earthColorTexture, earthMatrix);
+            RenderWithBlinn(
+                ref this.sphereMeshAsset,
+                ref this.earthColorTexture,
+                ref this.normalTexture,
+                earthMatrix);
 
 #else
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
@@ -363,7 +367,7 @@ namespace vissatellite
             ref MeshAssetData mesh,
             ref ImageAssetData earthColorTexture,
             ref ImageAssetData normalTexture,
-            Vector3 location)
+            Matrix4 modelMatrix)
         {
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, earthColorTexture.OpenGLHandle);
@@ -373,7 +377,6 @@ namespace vissatellite
             GL.BindVertexArray(mesh.VertexArrayObjectHandle);
             GL.UseProgram(blinnShader.BasicShader.ProgramHandle);
 
-            Matrix4 modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(location);
             var modelViewProjection = modelMatrix * this.cameraData.Transformation * this.cameraData.PerspectiveProjection;
             GL.UniformMatrix4(
                 blinnShader.BasicShader.ModelviewProjectionMatrixLocation,
@@ -499,22 +502,22 @@ namespace vissatellite
                 var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
                 cameraData.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.A) {
+            if(this.keyboardInput.LeftArrow) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Up, angle);
                 var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
                 cameraData.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.D) {
+            if(this.keyboardInput.RightArrow) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Up, -angle);
                 var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
                 cameraData.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.LeftArrow) {
+            if(this.keyboardInput.A) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Direction, -angle);
                 var newUp4 = new Vector4(cameraData.Up) * rotationMatrix;
                 cameraData.Up = newUp4.Xyz;
             }
-            if(this.keyboardInput.RightArrow) {
+            if(this.keyboardInput.D) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Direction, angle);
                 var newUp4 = new Vector4(cameraData.Up) * rotationMatrix;
                 cameraData.Up = newUp4.Xyz;
