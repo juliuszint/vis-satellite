@@ -316,6 +316,11 @@ namespace vissatellite
             meshAsset.IsLoaded = true;
         }
 
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+            Console.WriteLine($"Mouse Down at: {e.X}, {e.Y}");
+        }
+
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             this.elapsedSeconds += e.Time;
