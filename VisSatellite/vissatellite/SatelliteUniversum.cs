@@ -99,8 +99,8 @@ namespace vissatellite
                     imageData = new byte[img.Width * img.Height * 4];
                     width = img.Width;
                     height = img.Height;
-                    for (int x = 0; x < img.Width; x++) {
-                        for (int y = 0; y < img.Height; y++) {
+                    for (int y = 0; y < img.Height; y++) {
+                        for (int x = 0; x < img.Width; x++) {
                             var pixelValue = img[x, y];
                             imageData[currentIndex++] = pixelValue.B;
                             imageData[currentIndex++] = pixelValue.G;
