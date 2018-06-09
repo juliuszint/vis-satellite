@@ -11,7 +11,7 @@ namespace vissatellite
 	public class SatelliteUniverse : GameWindow
 	{
         private double elapsedSeconds;
-        private ImageAssetData colorTexture;
+        private ImageAssetData earthColorTexture;
         private ImageAssetData satelliteTexture;
         private ImageAssetData normalTexture;
         private MeshAssetData sphereMeshAsset;
@@ -48,9 +48,9 @@ namespace vissatellite
             this.satelliteMeshAsset.AssetName = "vissatellite.meshes.satellite.obj";
             this.LoadMeshAsset(ref this.satelliteMeshAsset);
 
-            this.colorTexture = new ImageAssetData();
-            this.colorTexture.AssetName = "vissatellite.textures.earth.jpg";
-            this.LoadImageAsset(ref this.colorTexture);
+            this.earthColorTexture = new ImageAssetData();
+            this.earthColorTexture.AssetName = "vissatellite.textures.earth.jpg";
+            this.LoadImageAsset(ref this.earthColorTexture);
 
             this.satelliteTexture = new ImageAssetData();
             this.satelliteTexture.AssetName = "vissatellite.textures.satellite_texture.jpg";
@@ -326,15 +326,26 @@ namespace vissatellite
 #if JULIUS
 
             var fullRotationTime = 6;
+            var rotationAngleRad = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
+
             var modelMatrix = Matrix4.Identity;
-            modelMatrix *= Matrix4.CreateScale(6.0f);
-            var rotation = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
-            modelMatrix *= Matrix4.CreateRotationY(rotation);
-            RenderWithBasicShader(ref this.satelliteMeshAsset, ref this.satelliteTexture, modelMatrix);
+            modelMatrix *= Matrix4.CreateRotationY(rotationAngleRad);
+
+            var satelliteMatrix = 
+                Matrix4.Identity * 
+                Matrix4.CreateScale(1) * 
+                Matrix4.CreateTranslation(7, 0, 0) * 
+                Matrix4.CreateRotationY(rotationAngleRad);
+            RenderWithBasicShader(ref this.satelliteMeshAsset, ref this.satelliteTexture, satelliteMatrix);
+            var earthMatrix = 
+                Matrix4.Identity * 
+                Matrix4.CreateRotationY(rotationAngleRad) * 
+                Matrix4.CreateScale(6.0f);
+            RenderWithBasicShader(ref this.sphereMeshAsset, ref this.earthColorTexture, earthMatrix);
             
 //                RenderWithBlinn(
 //                    ref this.sphereMeshAsset,
-//                    ref this.colorTexture,
+//                    ref this.earthColorTexture,
 //                    ref this.normalTexture,
 //                    new Vector3 (i * 2.5f, 0, 0));
 
@@ -342,7 +353,7 @@ namespace vissatellite
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
                 var modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
-                RenderWithBasicShader(ref this.sphereMeshAsset, ref this.colorTexture, modelMatrix);
+                RenderWithBasicShader(ref this.sphereMeshAsset, ref this.earthColorTexture, modelMatrix);
             }
 #endif
             this.SwapBuffers();
@@ -350,12 +361,12 @@ namespace vissatellite
 
         private void RenderWithBlinn(
             ref MeshAssetData mesh,
-            ref ImageAssetData colorTexture,
+            ref ImageAssetData earthColorTexture,
             ref ImageAssetData normalTexture,
             Vector3 location)
         {
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, colorTexture.OpenGLHandle);
+            GL.BindTexture(TextureTarget.Texture2D, earthColorTexture.OpenGLHandle);
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2D, normalTexture.OpenGLHandle);
 
@@ -513,7 +524,7 @@ namespace vissatellite
 
         protected override void OnUnload(EventArgs e)
         {
-            this.UnloadImageAsset(this.colorTexture);
+            this.UnloadImageAsset(this.earthColorTexture);
             this.UnloadShaderAsset(this.basicShaderAsset);
             this.UnloadMeshData(this.sphereMeshAsset);
         }
