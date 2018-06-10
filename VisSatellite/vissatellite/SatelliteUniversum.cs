@@ -364,8 +364,6 @@ namespace vissatellite
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
                 var satelliteMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
-               // RenderWithBasicShader(ref this.sphereMeshAsset, ref this.satelliteTexture, modelMatrix);
-
                 RenderWithBlinn(
                     ref this.satelliteMeshAsset,
                     ref this.satelliteTexture,
@@ -625,7 +623,7 @@ namespace vissatellite
                 satelite.Apogee = float.Parse(elements[11].Substring(1, elements[11].Length - 2).Replace(",", ""));
                 satelite.Eccentricity = float.Parse(elements[12], CultureInfo.InvariantCulture);
                 satelite.Inclenation = float.Parse(elements[13], CultureInfo.InvariantCulture);
-                satelite.Periode = float.Parse(elements[14]) * 60000;
+                satelite.Periode = float.Parse(elements[14], CultureInfo.InvariantCulture) * 60;
                 satelite.Position = new Vector3(satelites.Count, 0, 0);
                 satelites.Add(satelite);
 
@@ -641,7 +639,7 @@ namespace vissatellite
 
 
                 //TODO: remove temp hack for not loading all satelites
-                if (satelites.Count > 1)
+                if (satelites.Count > 50)
                     break;
             }
 
@@ -655,7 +653,7 @@ namespace vissatellite
             {
                 var satellite = this.simulationData.Satellites[i];
                 
-                double time = elapsedSeconds *10000000;
+                double time = elapsedSeconds *1000;
                 float timePeriapsis = 0;
 
                 double meanAnomaly = 2 * Math.PI;
