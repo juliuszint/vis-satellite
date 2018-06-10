@@ -359,10 +359,18 @@ namespace vissatellite
                 earthMatrix);
 
 #else
+
+
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
-                var modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
-                RenderWithBasicShader(ref this.sphereMeshAsset, ref this.earthColorTexture, modelMatrix);
+                var satelliteMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
+               // RenderWithBasicShader(ref this.sphereMeshAsset, ref this.satelliteTexture, modelMatrix);
+
+                RenderWithBlinn(
+                    ref this.satelliteMeshAsset,
+                    ref this.satelliteTexture,
+                    ref this.normalTexture,
+                    satelliteMatrix);
             }
 #endif
             this.SwapBuffers();
