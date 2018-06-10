@@ -598,12 +598,14 @@ namespace vissatellite
                 satelite.Apogee = float.Parse(elements[11].Substring(1, elements[11].Length - 2).Replace(",", ""));
                 satelite.Eccentricity = float.Parse(elements[12], CultureInfo.InvariantCulture);
                 satelite.Inclenation = float.Parse(elements[13], CultureInfo.InvariantCulture);
-
+                satelite.Periode = float.Parse(elements[14]) * 60000;
                 satelite.Position = new Vector3(satelites.Count, 0, 0);
                 satelites.Add(satelite);
 
                 //Calculated what we need
                 satelite.SemiMajorAxis = (satelite.Apogee + satelite.Perigee) / 2;
+
+
 
                 //Generate random values for needed object elements that are not in the dataset
                 satelite.LongitudeOfAscendingNode = 0;
@@ -612,7 +614,7 @@ namespace vissatellite
 
 
                 //TODO: remove temp hack for not loading all satelites
-                if (satelites.Count > 20)
+                if (satelites.Count > 1)
                     break;
             }
 
@@ -622,18 +624,42 @@ namespace vissatellite
 
         private void DoSimulation(double fTimeDelta)
         {
-            //TODO mue for earth
-            float mue = 0;
             for (int i = 0; i < this.simulationData.Satellites.Length; i++)
             {
                 var satellite = this.simulationData.Satellites[i];
+                
+                double time = elapsedSeconds *10000000;
+                float timePeriapsis = 0;
 
-                double meanAnomay = satellite.MeanAnomaly0 + (fTimeDelta * Math.Sqrt(mue / Math.Pow(satellite.SemiMajorAxis, 3)));
+                double meanAnomaly = 2 * Math.PI;
+                meanAnomaly *= (time - timePeriapsis) / satellite.Periode;
+
+                //Calc aproximated true anomaly
+                double trueAnomaly = meanAnomaly;
+                trueAnomaly += 2 * satellite.Eccentricity * Math.Sin(meanAnomaly);
+                trueAnomaly += 5.0f/4.0f * (satellite.Eccentricity * satellite.Eccentricity * Math.Sin(2* meanAnomaly));
+
+
+                double distance = satellite.SemiMajorAxis;
+                distance *= (1 - satellite.Eccentricity * satellite.Eccentricity) /
+                            (1 + satellite.Eccentricity *  Math.Cos(trueAnomaly));
 
 
 
+                //Convert polar coordinates to cartesian coordinates
+                double posX = distance * Math.Cos(trueAnomaly);
+                double posY = distance * Math.Sin(trueAnomaly);
+
+
+                satellite.Position.X = (float) posX;
+                satellite.Position.Y = (float) posY;
+                satellite.Position.Z = .0f;
 
             }
         }
+
+
+
+	   
     }
 }
