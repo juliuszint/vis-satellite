@@ -11,7 +11,7 @@ namespace vissatellite
 	public class SatelliteUniverse : GameWindow
 	{
         private double elapsedSeconds;
-        private ImageAssetData colorTexture;
+        private ImageAssetData earthColorTexture;
         private ImageAssetData satelliteTexture;
         private ImageAssetData normalTexture;
         private MeshAssetData sphereMeshAsset;
@@ -48,9 +48,9 @@ namespace vissatellite
             this.satelliteMeshAsset.AssetName = "vissatellite.meshes.satellite.obj";
             this.LoadMeshAsset(ref this.satelliteMeshAsset);
 
-            this.colorTexture = new ImageAssetData();
-            this.colorTexture.AssetName = "vissatellite.textures.earth.jpg";
-            this.LoadImageAsset(ref this.colorTexture);
+            this.earthColorTexture = new ImageAssetData();
+            this.earthColorTexture.AssetName = "vissatellite.textures.earth.jpg";
+            this.LoadImageAsset(ref this.earthColorTexture);
 
             this.satelliteTexture = new ImageAssetData();
             this.satelliteTexture.AssetName = "vissatellite.textures.satellite_texture.jpg";
@@ -99,8 +99,8 @@ namespace vissatellite
                     imageData = new byte[img.Width * img.Height * 4];
                     width = img.Width;
                     height = img.Height;
-                    for (int x = 0; x < img.Width; x++) {
-                        for (int y = 0; y < img.Height; y++) {
+                    for (int y = 0; y < img.Height; y++) {
+                        for (int x = 0; x < img.Width; x++) {
                             var pixelValue = img[x, y];
                             imageData[currentIndex++] = pixelValue.B;
                             imageData[currentIndex++] = pixelValue.G;
@@ -316,6 +316,11 @@ namespace vissatellite
             meshAsset.IsLoaded = true;
         }
 
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+            Console.WriteLine($"Mouse Down at: {e.X}, {e.Y}");
+        }
+
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             this.elapsedSeconds += e.Time;
@@ -326,23 +331,38 @@ namespace vissatellite
 #if JULIUS
 
             var fullRotationTime = 6;
+            var rotationAngleRad = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
+
             var modelMatrix = Matrix4.Identity;
-            modelMatrix *= Matrix4.CreateScale(6.0f);
-            var rotation = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
-            modelMatrix *= Matrix4.CreateRotationY(rotation);
-            RenderWithBasicShader(ref this.satelliteMeshAsset, ref this.satelliteTexture, modelMatrix);
-            
-//                RenderWithBlinn(
-//                    ref this.sphereMeshAsset,
-//                    ref this.colorTexture,
-//                    ref this.normalTexture,
-//                    new Vector3 (i * 2.5f, 0, 0));
+            modelMatrix *= Matrix4.CreateRotationY(rotationAngleRad);
+
+            var satelliteMatrix = 
+                Matrix4.Identity * 
+                Matrix4.CreateScale(1) * 
+                Matrix4.CreateTranslation(7, 0, 0) * 
+                Matrix4.CreateRotationY(rotationAngleRad);
+            //RenderWithBasicShader(ref this.satelliteMeshAsset, ref this.satelliteTexture, satelliteMatrix);
+            RenderWithBlinn(
+                ref this.satelliteMeshAsset,
+                ref this.satelliteTexture,
+                ref this.normalTexture,
+                satelliteMatrix);
+            var earthMatrix = 
+                Matrix4.Identity * 
+                Matrix4.CreateRotationY(rotationAngleRad) * 
+                Matrix4.CreateScale(3.0f);
+            //RenderWithBasicShader(ref this.sphereMeshAsset, ref this.earthColorTexture, earthMatrix);
+            RenderWithBlinn(
+                ref this.sphereMeshAsset,
+                ref this.earthColorTexture,
+                ref this.normalTexture,
+                earthMatrix);
 
 #else
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
                 var modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
-                RenderWithBasicShader(ref this.sphereMeshAsset, ref this.colorTexture, modelMatrix);
+                RenderWithBasicShader(ref this.sphereMeshAsset, ref this.earthColorTexture, modelMatrix);
             }
 #endif
             this.SwapBuffers();
@@ -350,19 +370,18 @@ namespace vissatellite
 
         private void RenderWithBlinn(
             ref MeshAssetData mesh,
-            ref ImageAssetData colorTexture,
+            ref ImageAssetData earthColorTexture,
             ref ImageAssetData normalTexture,
-            Vector3 location)
+            Matrix4 modelMatrix)
         {
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, colorTexture.OpenGLHandle);
+            GL.BindTexture(TextureTarget.Texture2D, earthColorTexture.OpenGLHandle);
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2D, normalTexture.OpenGLHandle);
 
             GL.BindVertexArray(mesh.VertexArrayObjectHandle);
             GL.UseProgram(blinnShader.BasicShader.ProgramHandle);
 
-            Matrix4 modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(location);
             var modelViewProjection = modelMatrix * this.cameraData.Transformation * this.cameraData.PerspectiveProjection;
             GL.UniformMatrix4(
                 blinnShader.BasicShader.ModelviewProjectionMatrixLocation,
@@ -488,22 +507,22 @@ namespace vissatellite
                 var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
                 cameraData.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.A) {
+            if(this.keyboardInput.LeftArrow) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Up, angle);
                 var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
                 cameraData.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.D) {
+            if(this.keyboardInput.RightArrow) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Up, -angle);
                 var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
                 cameraData.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.LeftArrow) {
+            if(this.keyboardInput.A) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Direction, -angle);
                 var newUp4 = new Vector4(cameraData.Up) * rotationMatrix;
                 cameraData.Up = newUp4.Xyz;
             }
-            if(this.keyboardInput.RightArrow) {
+            if(this.keyboardInput.D) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(cameraData.Direction, angle);
                 var newUp4 = new Vector4(cameraData.Up) * rotationMatrix;
                 cameraData.Up = newUp4.Xyz;
@@ -513,7 +532,7 @@ namespace vissatellite
 
         protected override void OnUnload(EventArgs e)
         {
-            this.UnloadImageAsset(this.colorTexture);
+            this.UnloadImageAsset(this.earthColorTexture);
             this.UnloadShaderAsset(this.basicShaderAsset);
             this.UnloadMeshData(this.sphereMeshAsset);
         }
