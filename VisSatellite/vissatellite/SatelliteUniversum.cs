@@ -13,7 +13,9 @@ namespace vissatellite
 	{
         private bool quit;
         private double elapsedSeconds;
-        private double simulationScalar;
+        private double simulationTimeScalar;
+	    private double simulationSizeScalar;
+	    private double earthDiameter = 12742;
 
         private ImageAssetData earthColorTexture;
         private ImageAssetData satelliteTexture;
@@ -45,7 +47,8 @@ namespace vissatellite
             this.consoleTask = Task.Run((Action)this.ProcessConsoleInput);
             Console.WriteLine($"OpenGL Version: {openGlVersion}");
             Console.WriteLine($"OpenGL Shader Language Version: {openGlShaderLanguageVersion}");
-            this.simulationScalar = 1.0;
+            this.simulationTimeScalar = 1.0;
+            this.simulationSizeScalar = 0.001f;
 
             this.sphereMeshAsset = new MeshAssetData();
             this.sphereMeshAsset.AssetName = "vissatellite.meshes.sphere.obj";
@@ -100,7 +103,7 @@ namespace vissatellite
                 if(line.StartsWith("t:")) {
                     var time = line.Substring(2);
                     var newScalar = double.Parse(time);
-                    this.simulationScalar = newScalar;
+                    this.simulationTimeScalar = newScalar;
                 }
                 else if(line.StartsWith("c:")) {
                     var newCameraPosition = line.Substring(2);
@@ -160,7 +163,7 @@ namespace vissatellite
                     }
                 }
             }
-            
+
             GL.TexImage2D(
                     TextureTarget.Texture2D,
                     0,
@@ -388,10 +391,10 @@ namespace vissatellite
             var fullRotationTime = 6;
             var rotationAngleRad = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
 
-            var satelliteMatrix = 
-                Matrix4.Identity * 
-                Matrix4.CreateScale(2) * 
-                Matrix4.CreateTranslation(0, 7, 0) * 
+            var satelliteMatrix =
+                Matrix4.Identity *
+                Matrix4.CreateScale(2) *
+                Matrix4.CreateTranslation(0, 7, 0) *
                 Matrix4.CreateRotationY(rotationAngleRad);
             RenderWithBlinn(
                 ref this.satelliteMeshAsset,
@@ -399,8 +402,8 @@ namespace vissatellite
                 ref this.normalTexture,
                 satelliteMatrix);
 
-            var earthMatrix = 
-                Matrix4.Identity * 
+            var earthMatrix =
+                Matrix4.Identity *
                 Matrix4.CreateRotationY(rotationAngleRad);
 
             RenderWithBlinn(
@@ -419,9 +422,16 @@ namespace vissatellite
             GL.End();
 
 #else
-            var earthMatrix = 
-                Matrix4.Identity * 
-                Matrix4.CreateScale(3.0f);
+
+            var fullRotationTime = 6;
+            var rotationAngleRad = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
+
+            var earthMatrix =
+                Matrix4.Identity *
+                Matrix4.CreateRotationY(rotationAngleRad) *
+                Matrix4.CreateScale((float)earthDiameter * (float)simulationSizeScalar);
+
+
             RenderWithBlinn(
                 ref this.sphereMeshAsset,
                 ref this.earthColorTexture,
@@ -430,7 +440,12 @@ namespace vissatellite
 
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
-                var satelliteMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
+                var satelliteMatrix =
+                    Matrix4.Identity *
+                    Matrix4.CreateScale(0.3f) *
+                    Matrix4.CreateTranslation(satellite.Position);
+
+
                 RenderWithBlinn(
                     ref this.satelliteMeshAsset,
                     ref this.satelliteTexture,
@@ -493,8 +508,8 @@ namespace vissatellite
             GL.UseProgram(basicShaderAsset.ProgramHandle);
 
             var modelViewProjection =
-                modelMatrix * 
-                this.cameraData.Transformation * 
+                modelMatrix *
+                this.cameraData.Transformation *
                 this.cameraData.PerspectiveProjection;
 
             GL.UniformMatrix4(
@@ -563,21 +578,21 @@ namespace vissatellite
 
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
-            if (e.Key == Key.W) 
+            if (e.Key == Key.W)
                 this.keyboardInput.W = false;
-            else if(e.Key == Key.A) 
+            else if(e.Key == Key.A)
                 this.keyboardInput.A = false;
-            else if(e.Key == Key.S) 
+            else if(e.Key == Key.S)
                 this.keyboardInput.S = false;
-            else if(e.Key == Key.D) 
+            else if(e.Key == Key.D)
                 this.keyboardInput.D = false;
-            else if(e.Key == Key.Up) 
+            else if(e.Key == Key.Up)
                 this.keyboardInput.UpArrow = false;
-            else if(e.Key == Key.Down) 
+            else if(e.Key == Key.Down)
                 this.keyboardInput.DownArrow = false;
-            else if(e.Key == Key.Left) 
+            else if(e.Key == Key.Left)
                 this.keyboardInput.LeftArrow = false;
-            else if(e.Key == Key.Right) 
+            else if(e.Key == Key.Right)
                 this.keyboardInput.RightArrow = false;
 
             if(e.Key == Key.C && e.Modifiers.HasFlag(KeyModifiers.Control))
@@ -590,21 +605,21 @@ namespace vissatellite
 
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
-            if (e.Key == Key.W) 
+            if (e.Key == Key.W)
                 this.keyboardInput.W = true;
             else if(e.Key == Key.A)
                 this.keyboardInput.A = true;
-            else if(e.Key == Key.S) 
+            else if(e.Key == Key.S)
                 this.keyboardInput.S = true;
-            else if(e.Key == Key.D) 
+            else if(e.Key == Key.D)
                 this.keyboardInput.D = true;
-            else if(e.Key == Key.Up) 
+            else if(e.Key == Key.Up)
                 this.keyboardInput.UpArrow = true;
-            else if(e.Key == Key.Down) 
+            else if(e.Key == Key.Down)
                 this.keyboardInput.DownArrow = true;
-            else if(e.Key == Key.Left) 
+            else if(e.Key == Key.Left)
                 this.keyboardInput.LeftArrow = true;
-            else if(e.Key == Key.Right) 
+            else if(e.Key == Key.Right)
                 this.keyboardInput.RightArrow = true;
             base.OnKeyDown(e);
         }
@@ -625,7 +640,7 @@ namespace vissatellite
             if(this.keyboardInput.S) {
                 cameraData.Eye += -cameraData.Direction * translationSens * fTimeDelta;
             }
-            
+
             // rotation
             float angle = (float)(Math.PI * fTimeDelta * rotationSens);
             if(this.keyboardInput.UpArrow) {
@@ -703,7 +718,7 @@ namespace vissatellite
             this.cameraData.ViewportWidth = Width;
             this.cameraData.ViewportHeight = Height;
             var yFieldOfView = (float)(fov * Math.PI / 180.0f);
-            this.cameraData.PerspectiveProjection = 
+            this.cameraData.PerspectiveProjection =
                 Matrix4.CreatePerspectiveFieldOfView(yFieldOfView, aspectRatio, this.cameraData.zNear, this.cameraData.zFar);
         }
 
@@ -745,8 +760,8 @@ namespace vissatellite
                 if (!elements[9].Equals(""))
                     satelite.LongitudeOfGeo = float.Parse(elements[9], CultureInfo.InvariantCulture);
 
-                satelite.Perigee = float.Parse(elements[10].Substring(1, elements[10].Length - 2).Replace(",", ""));
-                satelite.Apogee = float.Parse(elements[11].Substring(1, elements[11].Length - 2).Replace(",", ""));
+                satelite.Perigee = float.Parse(elements[10].Replace("\"", "").Replace(",", ""));
+                satelite.Apogee = float.Parse(elements[11].Replace("\"", "").Replace(",", ""));
                 satelite.Eccentricity = float.Parse(elements[12], CultureInfo.InvariantCulture);
                 satelite.Inclenation = float.Parse(elements[13], CultureInfo.InvariantCulture);
                 satelite.Periode = float.Parse(elements[14].Replace("\"", ""), CultureInfo.InvariantCulture) * 60;
@@ -754,17 +769,17 @@ namespace vissatellite
                 satelites.Add(satelite);
 
                 //Calculated what we need
-                satelite.SemiMajorAxis = (satelite.Apogee + satelite.Perigee) / 2;
+                satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + earthDiameter) / 2;
 
 
 
                 //Generate random values for needed object elements that are not in the dataset
                 satelite.LongitudeOfAscendingNode = (float)(rand.NextDouble() * Math.PI * 2);
                 satelite.ArgumentOfPeriapsis = (float) (rand.NextDouble() * Math.PI * 2);
-
+                //satelite.ArgumentOfPeriapsis = 0;
                 //TODO: remove temp hack for not loading all satelites
-                if (satelites.Count > 50)
-                    break;
+                //if (satelites.Count >50)
+                //    break;
             }
 
             this.simulationData.Satellites = satelites.ToArray();
@@ -775,11 +790,11 @@ namespace vissatellite
             for (int i = 0; i < this.simulationData.Satellites.Length; i++)
             {
                 var satellite = this.simulationData.Satellites[i];
-                double time = elapsedSeconds * 1000 * this.simulationScalar;
+                double time = elapsedSeconds * 1000 * this.simulationTimeScalar;
 
                 double meanAnomaly = satellite.ArgumentOfPeriapsis;
-                meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
-                
+                meanAnomaly += (2 * Math.PI) * -time / satellite.Periode;
+
                 //Calc aproximated true anomaly
                 double trueAnomaly = meanAnomaly;
                 trueAnomaly += 2 * satellite.Eccentricity * Math.Sin(meanAnomaly);
@@ -791,16 +806,17 @@ namespace vissatellite
                             (1 + satellite.Eccentricity *  Math.Cos(trueAnomaly));
 
 
-                            
+
                 //Convert polar coordinates to cartesian coordinates
                 double posX = distance * Math.Cos(trueAnomaly);
                 double posZ = distance * Math.Sin(trueAnomaly);
 
                 double posY = distance * Math.Sin(satellite.Inclenation) * Math.Sin(trueAnomaly);
 
-                satellite.Position.X = (float)posX; 
-                satellite.Position.Y = 0;
-                satellite.Position.Z = (float)posZ;
+
+                satellite.Position.X = (float)posX * (float)simulationSizeScalar;
+                satellite.Position.Y = (float) posY * (float)simulationSizeScalar;
+                satellite.Position.Z = (float)posZ * (float)simulationSizeScalar;
             }
         }
     }
