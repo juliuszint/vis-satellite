@@ -75,7 +75,13 @@ namespace vissatellite
 
     public struct CameraData
     {
-        // constant
+        // perspective projection
+        public float AspectRatio;
+        public int ViewportWidth;
+        public int ViewportHeight;
+        public float zNear;
+        public float zFar;
+
         public Matrix4 PerspectiveProjection;
 
         // moving with mouse and cursor

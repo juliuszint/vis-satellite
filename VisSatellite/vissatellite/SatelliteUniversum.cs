@@ -10,6 +10,7 @@ namespace vissatellite
 {
 	public class SatelliteUniverse : GameWindow
 	{
+        private bool quit;
         private double elapsedSeconds;
         private ImageAssetData earthColorTexture;
         private ImageAssetData satelliteTexture;
@@ -73,6 +74,8 @@ namespace vissatellite
             this.cameraData.Eye = new Vector3(0, 0, 20);
             this.cameraData.Up = new Vector3(0, 1, 0);
             this.cameraData.Direction = new Vector3(0, 0, -1);
+            this.cameraData.zNear = 1.0f;
+            this.cameraData.zFar = 500.0f;
             UpdateCameraTransformation(ref this.cameraData);
 
             this.ambientLightDirection = new Vector3(0, -1, 0);
@@ -316,9 +319,11 @@ namespace vissatellite
             meshAsset.IsLoaded = true;
         }
 
-        protected override void OnMouseUp(MouseButtonEventArgs e)
+        protected override void OnUpdateFrame(FrameEventArgs e)
         {
-            Console.WriteLine($"Mouse Down at: {e.X}, {e.Y}");
+            if (this.quit) {
+                this.Exit();
+            }
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -357,6 +362,15 @@ namespace vissatellite
                 ref this.earthColorTexture,
                 ref this.normalTexture,
                 earthMatrix);
+
+            GL.Begin(PrimitiveType.Lines);
+            GL.LineWidth(5.5f);
+            GL.Color3(1.0, 0.0, 0.0);
+            GL.Vertex3(0.0, 0.0, 0.0);
+            GL.Vertex3(1000, 0, 0);
+            GL.Vertex3(0.0, 0.0, 0.0);
+            GL.Vertex3(0, 1000, 0);
+            GL.End();
 
 #else
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
@@ -399,10 +413,12 @@ namespace vissatellite
             GL.Uniform4(blinnShader.LightSpecularColorLocation, new Vector4(0.0f, 0.0f, 0.0f, 0));
             GL.Uniform4(blinnShader.CameraPositionLocation, new Vector4(this.cameraData.Eye, 1));
 
-            GL.DrawElements(PrimitiveType.Triangles,
-                            mesh.IndicesCount,
-                            DrawElementsType.UnsignedInt,
-                            IntPtr.Zero);
+            GL.DrawElements(
+                    PrimitiveType.Triangles,
+                    mesh.IndicesCount,
+                    DrawElementsType.UnsignedInt,
+                    IntPtr.Zero);
+
             GL.BindVertexArray(0);
             GL.ActiveTexture(TextureUnit.Texture0);
 
@@ -436,6 +452,27 @@ namespace vissatellite
             GL.BindVertexArray(0);
         }
 
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+            var mouseX = ((e.X / (float)this.cameraData.ViewportWidth) * 2.0f) - 1.0f;
+            var mouseY = ((e.Y / (float)this.cameraData.ViewportHeight) * 2.0f) - 1.0f;
+            var mouseVector = new Vector4(mouseX, mouseY, this.cameraData.zNear, 1.0f);
+
+            var inverseTransformation = Matrix4.Invert(this.cameraData.Transformation);
+            var inverseProjection = Matrix4.Invert(this.cameraData.PerspectiveProjection);
+            mouseVector = mouseVector * inverseProjection;
+            mouseVector = mouseVector * inverseTransformation;
+
+            if (mouseVector.W > float.Epsilon || mouseVector.W < float.Epsilon)
+            {
+                mouseVector.X /= mouseVector.W;
+                mouseVector.Y /= mouseVector.W;
+                mouseVector.Z /= mouseVector.W;
+            }
+
+            Console.WriteLine($"Mouse Down at: {mouseVector.X}, {mouseVector.Y}");
+        }
+
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
             if (e.Key == Key.W) 
@@ -454,6 +491,12 @@ namespace vissatellite
                 this.keyboardInput.LeftArrow = false;
             else if(e.Key == Key.Right) 
                 this.keyboardInput.RightArrow = false;
+
+            if(e.Key == Key.C && e.Modifiers.HasFlag(KeyModifiers.Control))
+                this.quit = true;
+            if(e.Key == Key.Escape)
+                this.quit = true;
+
             base.OnKeyDown(e);
         }
 
@@ -498,12 +541,12 @@ namespace vissatellite
             // rotation
             float angle = (float)(Math.PI * fTimeDelta * rotationSens);
             if(this.keyboardInput.UpArrow) {
-                var rotationMatrix = Matrix4.CreateFromAxisAngle(directionOrtho, angle);
+                var rotationMatrix = Matrix4.CreateFromAxisAngle(directionOrtho, -angle);
                 var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
                 cameraData.Direction = newDirection4.Xyz;
             }
             if(this.keyboardInput.DownArrow) {
-                var rotationMatrix = Matrix4.CreateFromAxisAngle(directionOrtho, -angle);
+                var rotationMatrix = Matrix4.CreateFromAxisAngle(directionOrtho, angle);
                 var newDirection4 = new Vector4(cameraData.Direction) * rotationMatrix;
                 cameraData.Direction = newDirection4.Xyz;
             }
@@ -567,18 +610,17 @@ namespace vissatellite
         {
             var fov = 60;
             GL.Viewport(0, 0, Width, Height);
-            float aspectRatio = Width / (float)Height;
-            Matrix4.CreatePerspectiveFieldOfView(
-                    (float)(fov * Math.PI / 180.0f),
-                    aspectRatio,
-                    1,
-                    100,
-                    out this.cameraData.PerspectiveProjection);
+            var aspectRatio = Width / (float)Height;
+            this.cameraData.ViewportWidth = Width;
+            this.cameraData.ViewportHeight = Height;
+            var yFieldOfView = (float)(fov * Math.PI / 180.0f);
+            this.cameraData.PerspectiveProjection = 
+                Matrix4.CreatePerspectiveFieldOfView(yFieldOfView, aspectRatio, this.cameraData.zNear, this.cameraData.zFar);
         }
 
         private void UpdateCameraTransformation(ref CameraData cameraData)
         {
-            this.cameraData.Transformation = Matrix4.LookAt(
+            cameraData.Transformation = Matrix4.LookAt(
                     cameraData.Eye,
                     cameraData.Eye + cameraData.Direction,
                     cameraData.Up);
