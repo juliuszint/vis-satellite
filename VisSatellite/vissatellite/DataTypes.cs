@@ -102,7 +102,7 @@ namespace vissatellite
         public string Name;
         public float Apogee;
         public float Perigee;
-        public float LongitudeOfGEO;
+        public float LongitudeOfGeo;
 
         public float Eccentricity; //e
         public float SemiMajorAxis; //a
@@ -110,7 +110,6 @@ namespace vissatellite
         public float Inclenation; //i
         public float LongitudeOfAscendingNode; //Ω
         public float ArgumentOfPeriapsis; //ω
-        public float MeanAnomaly0; //M0
         public float Periode;
     }
 

@@ -606,6 +606,7 @@ namespace vissatellite
             var streamReader = new System.IO.StreamReader(satDataStream);
             streamReader.ReadLine();
             string line;
+            var rand = new Random();
             while ((line = streamReader.ReadLine()) != null)
             {
 
@@ -617,13 +618,13 @@ namespace vissatellite
 
                 //Read all the data we have
                 if (!elements[9].Equals(""))
-                    satelite.LongitudeOfGEO = float.Parse(elements[9], CultureInfo.InvariantCulture);
+                    satelite.LongitudeOfGeo = float.Parse(elements[9], CultureInfo.InvariantCulture);
 
                 satelite.Perigee = float.Parse(elements[10].Substring(1, elements[10].Length - 2).Replace(",", ""));
                 satelite.Apogee = float.Parse(elements[11].Substring(1, elements[11].Length - 2).Replace(",", ""));
                 satelite.Eccentricity = float.Parse(elements[12], CultureInfo.InvariantCulture);
                 satelite.Inclenation = float.Parse(elements[13], CultureInfo.InvariantCulture);
-                satelite.Periode = float.Parse(elements[14], CultureInfo.InvariantCulture) * 60;
+                satelite.Periode = float.Parse(elements[14].Replace("\"", ""), CultureInfo.InvariantCulture) * 60;
                 satelite.Position = new Vector3(satelites.Count, 0, 0);
                 satelites.Add(satelite);
 
@@ -633,10 +634,8 @@ namespace vissatellite
 
 
                 //Generate random values for needed object elements that are not in the dataset
-                satelite.LongitudeOfAscendingNode = 0;
-                satelite.ArgumentOfPeriapsis = 0;
-                satelite.MeanAnomaly0 = 0;
-
+                satelite.LongitudeOfAscendingNode = (float)(rand.NextDouble() * Math.PI * 2);
+                satelite.ArgumentOfPeriapsis = (float) (rand.NextDouble() * Math.PI * 2);
 
                 //TODO: remove temp hack for not loading all satelites
                 if (satelites.Count > 50)
@@ -654,10 +653,10 @@ namespace vissatellite
                 var satellite = this.simulationData.Satellites[i];
                 
                 double time = elapsedSeconds *1000;
-                float timePeriapsis = 0;
 
-                double meanAnomaly = 2 * Math.PI;
-                meanAnomaly *= (time - timePeriapsis) / satellite.Periode;
+
+                double meanAnomaly = satellite.ArgumentOfPeriapsis;
+                meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
 
                 //Calc aproximated true anomaly
                 double trueAnomaly = meanAnomaly;
@@ -674,11 +673,11 @@ namespace vissatellite
                 //Convert polar coordinates to cartesian coordinates
                 double posX = distance * Math.Cos(trueAnomaly);
                 double posY = distance * Math.Sin(trueAnomaly);
-
+                double posZ = distance * Math.Sin(satellite.Inclenation) * Math.Sin(trueAnomaly);
 
                 satellite.Position.X = (float) posX;
                 satellite.Position.Y = (float) posY;
-                satellite.Position.Z = .0f;
+                satellite.Position.Z = (float) posZ;
 
             }
         }
