@@ -373,6 +373,15 @@ namespace vissatellite
             GL.End();
 
 #else
+            var earthMatrix = 
+                Matrix4.Identity * 
+                Matrix4.CreateScale(3.0f);
+            RenderWithBlinn(
+                ref this.sphereMeshAsset,
+                ref this.earthColorTexture,
+                ref this.normalTexture,
+                earthMatrix);
+
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
                 var satelliteMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
