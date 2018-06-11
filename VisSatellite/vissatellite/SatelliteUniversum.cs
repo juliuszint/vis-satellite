@@ -102,7 +102,35 @@ namespace vissatellite
                     var newScalar = double.Parse(time);
                     this.simulationScalar = newScalar;
                 }
-                Console.WriteLine($"input: {line}");
+                else if(line.StartsWith("c:")) {
+                    var newCameraPosition = line.Substring(2);
+                    switch(newCameraPosition[0]) {
+                        case 'z':
+                            this.cameraData.Eye = new Vector3(0, 0, 20);
+                            this.cameraData.Direction = new Vector3(0, 0, -1);
+                            this.cameraData.Up = new Vector3(0, 1, 0);
+                            this.UpdateCameraTransformation(ref this.cameraData);
+                            Console.WriteLine($"Camera set to default Z");
+                            break;
+                        case 'x':
+                            this.cameraData.Eye = new Vector3(20, 0, 0);
+                            this.cameraData.Direction = new Vector3(-1, 0, 0);
+                            this.cameraData.Up = new Vector3(0, 1, 0);
+                            this.UpdateCameraTransformation(ref this.cameraData);
+                            Console.WriteLine($"Camera set to default X");
+                            break;
+                        case 'y':
+                            this.cameraData.Eye = new Vector3(0, 20, 0);
+                            this.cameraData.Direction = new Vector3(0, -1, 0);
+                            this.cameraData.Up = new Vector3(0, 0, 1);
+                            this.UpdateCameraTransformation(ref this.cameraData);
+                            Console.WriteLine($"Camera set to default Y");
+                            break;
+                    }
+                }
+                else {
+                    Console.WriteLine($"input: {line}");
+                }
             }
         }
 
@@ -370,10 +398,11 @@ namespace vissatellite
                 ref this.satelliteTexture,
                 ref this.normalTexture,
                 satelliteMatrix);
+
             var earthMatrix = 
                 Matrix4.Identity * 
-                Matrix4.CreateRotationY(rotationAngleRad) * 
-                Matrix4.CreateScale(3.0f);
+                Matrix4.CreateRotationY(rotationAngleRad);
+
             RenderWithBlinn(
                 ref this.sphereMeshAsset,
                 ref this.earthColorTexture,
@@ -485,23 +514,52 @@ namespace vissatellite
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
             var mouseX = ((e.X / (float)this.cameraData.ViewportWidth) * 2.0f) - 1.0f;
-            var mouseY = ((e.Y / (float)this.cameraData.ViewportHeight) * 2.0f) - 1.0f;
-            var mouseVector = new Vector4(mouseX, mouseY, this.cameraData.zNear, 1.0f);
+            var mouseY = 1.0f - ((e.Y / (float)this.cameraData.ViewportHeight) * 2.0f);
+            var mouseVector = new Vector4(mouseX, mouseY, 0, 1.0f);
 
             var inverseTransformation = Matrix4.Invert(this.cameraData.Transformation);
             var inverseProjection = Matrix4.Invert(this.cameraData.PerspectiveProjection);
             mouseVector = mouseVector * inverseProjection;
             mouseVector = mouseVector * inverseTransformation;
 
-            if (mouseVector.W > float.Epsilon || mouseVector.W < float.Epsilon)
-            {
+            if (mouseVector.W > float.Epsilon || mouseVector.W < float.Epsilon) {
                 mouseVector.X /= mouseVector.W;
                 mouseVector.Y /= mouseVector.W;
                 mouseVector.Z /= mouseVector.W;
             }
 
-            Console.WriteLine($"Mouse Down at: {mouseVector.X}, {mouseVector.Y}");
+            var mouseRay = mouseVector.Xyz - this.cameraData.Eye;
+            mouseRay.Normalize();
+
+            var earthPosition = new Vector3(0, 0, 0);
+            var distance = CalculateDistancePointLine(
+                this.cameraData.Eye,
+                mouseRay,
+                earthPosition);
+
+            if(distance <= 0.5) {
+                Console.WriteLine("ERDE SELEKTIERT");
+            }
+
+//            Console.WriteLine($"Eye: {this.cameraData.Eye.X}, {this.cameraData.Eye.Y}, {this.cameraData.Eye.Z}");
+//            Console.WriteLine($"Ray: {mouseRay.X}, {mouseRay.Y}, {mouseRay.Z}");
+//            Console.WriteLine($"Distance: {distance}");
+//            Console.WriteLine();
         }
+
+        private float CalculateDistancePointLine(Vector3 linePoint, Vector3 lineDirection, Vector3 point)
+        {
+            float planeA = lineDirection.X;
+            float planeB = lineDirection.Y;
+            float planeC = lineDirection.Z;
+            float planeD = Vector3.Dot(lineDirection, point);
+            float lambda = (-planeD - planeA * linePoint.X - planeB * linePoint.Y - planeC * linePoint.Z) /
+                           (planeA * lineDirection.X + planeB * lineDirection.Y + planeC * lineDirection.Z);
+            var pointOnPlane = linePoint + lineDirection * lambda;
+            float distance = Vector3.Distance(pointOnPlane, point);
+            return distance;
+        }
+
 
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
