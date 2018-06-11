@@ -236,6 +236,10 @@ namespace vissatellite
 
             var planeMesh = Wavefront.Load(meshAsset.AssetName);
             meshAsset.IndicesCount = planeMesh.Indices.Length;
+            Console.WriteLine($"Loaded {meshAsset.AssetName}:");
+            Console.WriteLine($"x: {planeMesh.xMin} , {planeMesh.xMax}");
+            Console.WriteLine($"y: {planeMesh.yMin} , {planeMesh.yMax}");
+            Console.WriteLine($"z: {planeMesh.zMin} , {planeMesh.zMax}");
 
             // load geometry into gpu memory
             int strideCount = 14;
@@ -353,19 +357,14 @@ namespace vissatellite
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 #if JULIUS
-
             var fullRotationTime = 6;
             var rotationAngleRad = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
 
-            var modelMatrix = Matrix4.Identity;
-            modelMatrix *= Matrix4.CreateRotationY(rotationAngleRad);
-
             var satelliteMatrix = 
                 Matrix4.Identity * 
-                Matrix4.CreateScale(1) * 
-                Matrix4.CreateTranslation(7, 0, 0) * 
+                Matrix4.CreateScale(2) * 
+                Matrix4.CreateTranslation(0, 7, 0) * 
                 Matrix4.CreateRotationY(rotationAngleRad);
-            //RenderWithBasicShader(ref this.satelliteMeshAsset, ref this.satelliteTexture, satelliteMatrix);
             RenderWithBlinn(
                 ref this.satelliteMeshAsset,
                 ref this.satelliteTexture,
@@ -375,7 +374,6 @@ namespace vissatellite
                 Matrix4.Identity * 
                 Matrix4.CreateRotationY(rotationAngleRad) * 
                 Matrix4.CreateScale(3.0f);
-            //RenderWithBasicShader(ref this.sphereMeshAsset, ref this.earthColorTexture, earthMatrix);
             RenderWithBlinn(
                 ref this.sphereMeshAsset,
                 ref this.earthColorTexture,

@@ -17,6 +17,13 @@ namespace vissatellite
         public Vector2[] UVs;
         public Vector3[] Tangents;
         public Vector3[] BiTangents;
+
+        public float xMax;
+        public float xMin;
+        public float yMin;
+        public float yMax;
+        public float zMin;
+        public float zMax;
     }
 
     public static class VertexAttribIndex

@@ -56,32 +56,21 @@ namespace vissatellite
             ParseFile(inMemoryWavefront, textContent);
             CalculateTangentsAndBiTangents(inMemoryWavefront);
             var result = CreateVertexDataObject(inMemoryWavefront);
-            //AverageTangents(result);
+            CalculateMeshMinMax(result);
             return result;
         }
 
-        private static void AverageTangents(ObjectVertexData data)
+        private static void CalculateMeshMinMax(ObjectVertexData vertexData)
         {
-            for (int i = 0; i < data.Vertices.Length - 1; i++) {
-                for (int o = i + 1; o < data.Vertices.Length; o++) {
-                    var vi = data.Vertices[i];
-                    var vo = data.Vertices[o];
-                    var ni = data.Normals[i];
-                    var no = data.Normals[o];
-                    var ui = data.UVs[i];
-                    var uo = data.UVs[o];
+            for(int i = 0; i < vertexData.Vertices.Length; i++) {
+                var v = vertexData.Vertices[i];
+                vertexData.xMax = Math.Max(vertexData.xMax, v.X);
+                vertexData.yMax = Math.Max(vertexData.yMax, v.Y);
+                vertexData.zMax = Math.Max(vertexData.zMax, v.Z);
 
-                    if (vi == vo && ni == no && ui == uo)
-                    {
-                        Vector3 tanI = data.Tangents[i];
-                        data.Tangents[i] += data.Tangents[o];
-                        data.Tangents[o] += tanI;
-
-                        Vector3 biTanI = data.BiTangents[i];
-                        data.BiTangents[i] += data.BiTangents[o];
-                        data.BiTangents[o] += biTanI;
-                    }
-                }
+                vertexData.xMin = Math.Min(vertexData.xMin, v.X);
+                vertexData.yMin = Math.Min(vertexData.yMin, v.Y);
+                vertexData.zMin = Math.Min(vertexData.zMin, v.Z);
             }
         }
 
