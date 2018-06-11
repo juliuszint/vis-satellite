@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using OpenTK;
@@ -375,8 +375,12 @@ namespace vissatellite
 #else
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
-                var modelMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
-                RenderWithBasicShader(ref this.sphereMeshAsset, ref this.earthColorTexture, modelMatrix);
+                var satelliteMatrix = Matrix4.Identity * Matrix4.CreateTranslation(satellite.Position);
+                RenderWithBlinn(
+                    ref this.satelliteMeshAsset,
+                    ref this.satelliteTexture,
+                    ref this.normalTexture,
+                    satelliteMatrix);
             }
 #endif
             this.SwapBuffers();
@@ -642,6 +646,7 @@ namespace vissatellite
             var streamReader = new System.IO.StreamReader(satDataStream);
             streamReader.ReadLine();
             string line;
+            var rand = new Random();
             while ((line = streamReader.ReadLine()) != null)
             {
 
@@ -653,47 +658,63 @@ namespace vissatellite
 
                 //Read all the data we have
                 if (!elements[9].Equals(""))
-                    satelite.LongitudeOfGEO = float.Parse(elements[9], CultureInfo.InvariantCulture);
+                    satelite.LongitudeOfGeo = float.Parse(elements[9], CultureInfo.InvariantCulture);
 
                 satelite.Perigee = float.Parse(elements[10].Substring(1, elements[10].Length - 2).Replace(",", ""));
                 satelite.Apogee = float.Parse(elements[11].Substring(1, elements[11].Length - 2).Replace(",", ""));
                 satelite.Eccentricity = float.Parse(elements[12], CultureInfo.InvariantCulture);
                 satelite.Inclenation = float.Parse(elements[13], CultureInfo.InvariantCulture);
-
+                satelite.Periode = float.Parse(elements[14].Replace("\"", ""), CultureInfo.InvariantCulture) * 60;
                 satelite.Position = new Vector3(satelites.Count, 0, 0);
                 satelites.Add(satelite);
 
                 //Calculated what we need
                 satelite.SemiMajorAxis = (satelite.Apogee + satelite.Perigee) / 2;
 
-                //Generate random values for needed object elements that are not in the dataset
-                satelite.LongitudeOfAscendingNode = 0;
-                satelite.ArgumentOfPeriapsis = 0;
-                satelite.MeanAnomaly0 = 0;
 
+
+                //Generate random values for needed object elements that are not in the dataset
+                satelite.LongitudeOfAscendingNode = (float)(rand.NextDouble() * Math.PI * 2);
+                satelite.ArgumentOfPeriapsis = (float) (rand.NextDouble() * Math.PI * 2);
 
                 //TODO: remove temp hack for not loading all satelites
-                if (satelites.Count > 20)
+                if (satelites.Count > 50)
                     break;
             }
-
 
             this.simulationData.Satellites = satelites.ToArray();
         }
 
         private void DoSimulation(double fTimeDelta)
         {
-            //TODO mue for earth
-            float mue = 0;
             for (int i = 0; i < this.simulationData.Satellites.Length; i++)
             {
                 var satellite = this.simulationData.Satellites[i];
+                double time = elapsedSeconds *1000;
 
-                double meanAnomay = satellite.MeanAnomaly0 + (fTimeDelta * Math.Sqrt(mue / Math.Pow(satellite.SemiMajorAxis, 3)));
+                double meanAnomaly = satellite.ArgumentOfPeriapsis;
+                meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
+                
+                //Calc aproximated true anomaly
+                double trueAnomaly = meanAnomaly;
+                trueAnomaly += 2 * satellite.Eccentricity * Math.Sin(meanAnomaly);
+                trueAnomaly += 5.0f/4.0f * (satellite.Eccentricity * satellite.Eccentricity * Math.Sin(2* meanAnomaly));
 
 
+                double distance = satellite.SemiMajorAxis;
+                distance *= (1 - satellite.Eccentricity * satellite.Eccentricity) /
+                            (1 + satellite.Eccentricity *  Math.Cos(trueAnomaly));
 
 
+                            
+                //Convert polar coordinates to cartesian coordinates
+                double posX = distance * Math.Cos(trueAnomaly);
+                double posY = distance * Math.Sin(trueAnomaly);
+                double posZ = distance * Math.Sin(satellite.Inclenation) * Math.Sin(trueAnomaly);
+
+                satellite.Position.X = (float) posX;
+                satellite.Position.Y = (float) posY;
+                satellite.Position.Z = (float) posZ;
             }
         }
     }
