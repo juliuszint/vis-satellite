@@ -794,12 +794,13 @@ namespace vissatellite
                             
                 //Convert polar coordinates to cartesian coordinates
                 double posX = distance * Math.Cos(trueAnomaly);
-                double posY = distance * Math.Sin(trueAnomaly);
-                double posZ = distance * Math.Sin(satellite.Inclenation) * Math.Sin(trueAnomaly);
+                double posZ = distance * Math.Sin(trueAnomaly);
 
-                satellite.Position.X = (float) posX;
-                satellite.Position.Y = (float) posY;
-                satellite.Position.Z = (float) posZ;
+                double posY = distance * Math.Sin(satellite.Inclenation) * Math.Sin(trueAnomaly);
+
+                satellite.Position.X = (float)posX; 
+                satellite.Position.Y = 0;
+                satellite.Position.Z = (float)posZ;
             }
         }
     }
