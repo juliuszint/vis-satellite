@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading.Tasks;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -12,6 +13,8 @@ namespace vissatellite
 	{
         private bool quit;
         private double elapsedSeconds;
+        private double simulationScalar;
+
         private ImageAssetData earthColorTexture;
         private ImageAssetData satelliteTexture;
         private ImageAssetData normalTexture;
@@ -24,6 +27,7 @@ namespace vissatellite
         private Vector3 ambientLightDirection;
         private SimData simulationData;
         private KeyboardInput keyboardInput;
+        private Task consoleTask;
 
 		public SatelliteUniverse(int width, int height) : base(
                 width,
@@ -38,8 +42,10 @@ namespace vissatellite
         {
             var openGlVersion = GL.GetString(StringName.Version);
             var openGlShaderLanguageVersion = GL.GetString(StringName.ShadingLanguageVersion);
+            this.consoleTask = Task.Run((Action)this.ProcessConsoleInput);
             Console.WriteLine($"OpenGL Version: {openGlVersion}");
             Console.WriteLine($"OpenGL Shader Language Version: {openGlShaderLanguageVersion}");
+            this.simulationScalar = 1.0;
 
             this.sphereMeshAsset = new MeshAssetData();
             this.sphereMeshAsset.AssetName = "vissatellite.meshes.sphere.obj";
@@ -85,6 +91,19 @@ namespace vissatellite
             this.keyboardInput = new KeyboardInput();
 
             GL.Enable(EnableCap.DepthTest);
+        }
+
+        private void ProcessConsoleInput()
+        {
+            while(true) {
+                var line = Console.ReadLine();
+                if(line.StartsWith("t:")) {
+                    var time = line.Substring(2);
+                    var newScalar = double.Parse(time);
+                    this.simulationScalar = newScalar;
+                }
+                Console.WriteLine($"input: {line}");
+            }
         }
 
         private void LoadImageAsset(ref ImageAssetData asset)
@@ -588,6 +607,7 @@ namespace vissatellite
 
         protected override void OnUnload(EventArgs e)
         {
+            this.consoleTask.Wait(0);
             this.UnloadImageAsset(this.earthColorTexture);
             this.UnloadShaderAsset(this.basicShaderAsset);
             this.UnloadMeshData(this.sphereMeshAsset);
@@ -699,7 +719,7 @@ namespace vissatellite
             for (int i = 0; i < this.simulationData.Satellites.Length; i++)
             {
                 var satellite = this.simulationData.Satellites[i];
-                double time = elapsedSeconds *1000;
+                double time = elapsedSeconds * 1000 * this.simulationScalar;
 
                 double meanAnomaly = satellite.ArgumentOfPeriapsis;
                 meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
