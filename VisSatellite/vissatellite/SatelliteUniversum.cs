@@ -740,7 +740,7 @@ namespace vissatellite
                 satelite.Perigee = float.Parse(elements[10].Replace("\"", "").Replace(",", ""));
                 satelite.Apogee = float.Parse(elements[11].Replace("\"", "").Replace(",", ""));
                 satelite.Eccentricity = float.Parse(elements[12], CultureInfo.InvariantCulture);
-                satelite.Inclenation = float.Parse(elements[13], CultureInfo.InvariantCulture);
+                satelite.Inclenation = float.Parse(elements[13], CultureInfo.InvariantCulture) * (float) Math.PI/180;
                 satelite.Periode = float.Parse(elements[14].Replace("\"", ""), CultureInfo.InvariantCulture) * 60;
                 satelite.Position = new Vector3(satelites.Count, 0, 0);
                 satelites.Add(satelite);
@@ -770,7 +770,7 @@ namespace vissatellite
                 double time = elapsedSeconds * 1000 * this.simulationTimeScalar;
 
                 double meanAnomaly = satellite.ArgumentOfPeriapsis;
-                meanAnomaly += (2 * Math.PI) * -time / satellite.Periode;
+                meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
 
                 //Calc aproximated true anomaly
                 double trueAnomaly = meanAnomaly;
@@ -783,16 +783,17 @@ namespace vissatellite
                             (1 + satellite.Eccentricity *  Math.Cos(trueAnomaly));
 
 
+                double polarAngle = Math.PI/2 - (trueAnomaly +satellite.LongitudeOfAscendingNode) * satellite.Inclenation;
+
 
                 //Convert polar coordinates to cartesian coordinates
-                double posX = distance * Math.Cos(trueAnomaly);
-                double posZ = distance * Math.Sin(trueAnomaly);
-
-                double posY = distance * Math.Sin(satellite.Inclenation) * Math.Sin(trueAnomaly);
+                double posX = distance * Math.Sin(trueAnomaly) * Math.Sin(polarAngle);
+                double posZ = distance * Math.Cos(trueAnomaly) * Math.Sin(polarAngle);
+                double posY = distance * Math.Cos(polarAngle);
 
 
                 satellite.Position.X = (float)posX * (float)simulationSizeScalar;
-                satellite.Position.Y = (float) posY * (float)simulationSizeScalar;
+                satellite.Position.Y = (float)posY * (float)simulationSizeScalar;
                 satellite.Position.Z = (float)posZ * (float)simulationSizeScalar;
             }
         }
