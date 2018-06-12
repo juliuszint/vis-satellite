@@ -27,7 +27,7 @@ The `meshes` directory contains Wavefront (.obj) files for all the geometry used
 #### Source
 Five `.cs` files make up the entire source code for this small program. 
 
-`Utils.cs` is a small file with two extension methods for working with embedded resources. One for loading the entire resource as string and the other for opening a stream to a embedded resource. One for loading the entire resource as string and the other for opening a stream to a embedded resource.
+`Utils.cs` is a small file with two extension methods for working with embedded resources. One for loading the entire resource as string and the other for opening a stream to a embedded resource.
 
 `Program.cs` contains only 2 important lines of code that create a instance of the `SatelliteUniverse` class and execute the `Run` method.
 
