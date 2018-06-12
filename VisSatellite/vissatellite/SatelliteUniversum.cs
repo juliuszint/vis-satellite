@@ -13,9 +13,7 @@ namespace vissatellite
 	{
         private bool quit;
         private double elapsedSeconds;
-        private double simulationTimeScalar;
 	    private double simulationSizeScalar;
-	    private double earthDiameter = 12742;
         private float satelliteSizeScale = 0.3f;
 
         private ImageAssetData earthColorTexture;
@@ -47,7 +45,7 @@ namespace vissatellite
             this.consoleTask = Task.Run((Action)this.ProcessConsoleInput);
             Console.WriteLine($"OpenGL Version: {openGlVersion}");
             Console.WriteLine($"OpenGL Shader Language Version: {openGlShaderLanguageVersion}");
-            this.simulationTimeScalar = 1.0;
+
             this.simulationSizeScalar = 0.001f;
 
             this.sphereMeshAsset = new MeshAssetData();
@@ -373,13 +371,11 @@ namespace vissatellite
                 earthMatrix);
 #else
 
-            var fullRotationTime = 6;
-            var rotationAngleRad = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
 
             var earthMatrix =
                 Matrix4.Identity *
-                Matrix4.CreateRotationY(rotationAngleRad) *
-                Matrix4.CreateScale((float)earthDiameter * (float)simulationSizeScalar);
+                Matrix4.CreateRotationY(simulationData.CurrentEarthRotation) *
+                Matrix4.CreateScale((float)simulationData.RealEarthDiameter * (float)simulationSizeScalar);
 
 
             RenderWithBlinn(
@@ -420,9 +416,9 @@ namespace vissatellite
             GL.BindVertexArray(mesh.VertexArrayObjectHandle);
             GL.UseProgram(blinnShader.BasicShader.ProgramHandle);
 
-            var modelViewProjection = 
-                modelMatrix * 
-                this.cameraData.Transformation * 
+            var modelViewProjection =
+                modelMatrix *
+                this.cameraData.Transformation *
                 this.cameraData.PerspectiveProjection;
 
             GL.UniformMatrix4(
@@ -502,7 +498,7 @@ namespace vissatellite
             Console.WriteLine($"MinHitDistance: {minHitDistance}");
 #else
             var earthPosition = new Vector3(0, 0, 0);
-            var earthRadius = 0.5 * this.earthDiameter * this.simulationSizeScalar;
+            var earthRadius = 0.5 * this.simulationData.RealEarthDiameter * this.simulationSizeScalar;
 
             var distance = CalculateDistancePointLine(
                 this.cameraData.Eye,
@@ -698,7 +694,7 @@ namespace vissatellite
                 if(line.StartsWith("simtime")) {
                     var time = line.Substring(7);
                     var newScalar = double.Parse(time.Trim());
-                    this.simulationTimeScalar = newScalar;
+                    this.simulationData.SimulationSpeed = newScalar;
                 }
                 else {
                     Console.WriteLine($"I am a teapot");
@@ -714,9 +710,9 @@ namespace vissatellite
         private void InitSimulationData()
         {
             this.simulationData = new SimData();
-            this.simulationData.TotalSimulationTime = 0;
-            this.simulationData.SimulationSpeed = 1.0f;
-
+            this.simulationData.CurrentEarthRotation = 0;
+            this.simulationData.SimulationSpeed = 1000.0f;
+            this.simulationData.RealEarthPeriode = 24 * 60 * 60;
             var satelites = new List<SatelliteSimData>();
             var satDataStream = Utils.OpenEmbeddedResource("vissatellite.simdata.UCS_Satellite_Database_9-1-2017.txt");
 
@@ -746,7 +742,7 @@ namespace vissatellite
                 satelites.Add(satelite);
 
                 //Calculated what we need
-                satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + earthDiameter) / 2;
+                satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + simulationData.RealEarthDiameter) / 2;
 
 
 
@@ -764,10 +760,15 @@ namespace vissatellite
 
         private void DoSimulation(double fTimeDelta)
         {
+
+            double time = elapsedSeconds * simulationData.SimulationSpeed;
+
+            simulationData.CurrentEarthRotation = (float)((time % this.simulationData.RealEarthPeriode / this.simulationData.RealEarthPeriode) * 2 * Math.PI);
+
+
             for (int i = 0; i < this.simulationData.Satellites.Length; i++)
             {
                 var satellite = this.simulationData.Satellites[i];
-                double time = elapsedSeconds * 1000 * this.simulationTimeScalar;
 
                 double meanAnomaly = satellite.ArgumentOfPeriapsis;
                 meanAnomaly += (2 * Math.PI) * time / satellite.Periode;

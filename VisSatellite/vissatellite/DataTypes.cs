@@ -102,9 +102,12 @@ namespace vissatellite
 
     public class SimData
     {
-        public float TotalSimulationTime;
-        public float SimulationSpeed;
+        public float RealEarthPeriode = 24 * 60 * 60;
+        public float RealEarthDiameter = 12742;
 
+        public double SimulationSpeed;
+
+        public float CurrentEarthRotation;
         public SatelliteSimData[] Satellites;
     }
 
