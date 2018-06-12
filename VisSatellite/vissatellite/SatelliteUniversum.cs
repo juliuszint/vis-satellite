@@ -18,6 +18,7 @@ namespace vissatellite
 
         private ImageAssetData earthColorTexture;
         private ImageAssetData satelliteTexture;
+        private ImageAssetData satelliteTextureSelected;
         private ImageAssetData emptyNormalTexture;
         private MeshAssetData sphereMeshAsset;
         private MeshAssetData satelliteMeshAsset;
@@ -63,6 +64,10 @@ namespace vissatellite
             this.satelliteTexture = new ImageAssetData();
             this.satelliteTexture.AssetName = "vissatellite.textures.satellite_texture.jpg";
             this.LoadImageAsset(ref this.satelliteTexture);
+
+            this.satelliteTextureSelected = new ImageAssetData();
+            this.satelliteTextureSelected.AssetName = "vissatellite.textures.satellite_texture_selected.jpg";
+            this.LoadImageAsset(ref this.satelliteTextureSelected);
 
             this.emptyNormalTexture = new ImageAssetData();
             this.emptyNormalTexture.AssetName = "vissatellite.textures.empty_normal.jpg";
@@ -390,18 +395,20 @@ namespace vissatellite
 
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
-
-                if (satellite.IsVisible)
-                {
+                if (satellite.IsVisible) {
                     var selectedScale = satellite.IsSelected ? 5.0f : 1.0f;
                     var satelliteMatrix =
                         Matrix4.Identity *
-                        Matrix4.CreateScale(this.satelliteSizeScale * selectedScale) *
+                        Matrix4.CreateScale(this.satelliteSizeScale) *
                         Matrix4.CreateTranslation(satellite.Position);
+
+                    var texture = satellite.IsSelected 
+                        ? this.satelliteTextureSelected
+                        : this.satelliteTexture;
 
                     RenderWithBlinn(
                         ref this.satelliteMeshAsset,
-                        ref this.satelliteTexture,
+                        ref texture,
                         ref this.emptyNormalTexture,
                         satelliteMatrix);
                 }
@@ -497,10 +504,13 @@ namespace vissatellite
                     minHitIndex = i;
                 }
             }
-            Console.WriteLine($"SatelliteBoundingRadius: {satelliteRadius}, distance: {minHitDistance}");
-            Console.WriteLine($"Hitcounter: {hitCounter}");
+//            Console.WriteLine($"SatelliteBoundingRadius: {satelliteRadius}, distance: {minHitDistance}");
+//            Console.WriteLine($"Hitcounter: {hitCounter}");
             if(minHitIndex > 0) {
-                this.simulationData.Satellites[minHitIndex].IsSelected = true;
+                var selectedSatellite = this.simulationData.Satellites[minHitIndex];
+                selectedSatellite.IsSelected = true;
+                Console.WriteLine($"Informationen zum ausgewählten Satelliten:");
+                Console.WriteLine($"Name: {selectedSatellite.Name}");
             }
 
 #else

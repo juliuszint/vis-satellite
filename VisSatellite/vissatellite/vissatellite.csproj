@@ -162,6 +162,7 @@
     <EmbeddedResource Include="meshes\sphere.obj" />
     <EmbeddedResource Include="meshes\satellite.obj" />
     <EmbeddedResource Include="textures\satellite_texture.jpg" />
+    <EmbeddedResource Include="textures\satellite_texture_selected.jpg" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="simdata\UCS_Satellite_Database_9-1-2017.txt" />
