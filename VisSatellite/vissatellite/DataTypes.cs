@@ -124,6 +124,7 @@ namespace vissatellite
         public float LongitudeOfAscendingNode; //Ω
         public float ArgumentOfPeriapsis; //ω
         public float Periode;
+        public bool IsSelected;
     }
 
     public struct KeyboardInput

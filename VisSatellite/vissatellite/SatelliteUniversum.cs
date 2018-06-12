@@ -16,15 +16,15 @@ namespace vissatellite
         private double simulationTimeScalar;
 	    private double simulationSizeScalar;
 	    private double earthDiameter = 12742;
+        private float satelliteSizeScale = 0.3f;
 
         private ImageAssetData earthColorTexture;
         private ImageAssetData satelliteTexture;
-        private ImageAssetData normalTexture;
+        private ImageAssetData emptyNormalTexture;
         private MeshAssetData sphereMeshAsset;
         private MeshAssetData satelliteMeshAsset;
         private CameraData cameraData;
 
-        private BasicShaderAssetData basicShaderAsset;
         private BlinnShaderAsset blinnShader;
         private Vector3 ambientLightDirection;
         private SimData simulationData;
@@ -32,12 +32,12 @@ namespace vissatellite
         private Task consoleTask;
 
 		public SatelliteUniverse(int width, int height) : base(
-                width,
-                height,
-                GraphicsMode.Default,
-                "Satellite Universum",
-                0,
-                DisplayDevice.Default, 3, 3, GraphicsContextFlags.ForwardCompatible)
+            width,
+            height,
+            GraphicsMode.Default,
+            "Satellite Universum",
+            0,
+            DisplayDevice.Default, 3, 3, GraphicsContextFlags.ForwardCompatible)
 		{ }
 
         protected override void OnLoad(EventArgs e)
@@ -66,14 +66,9 @@ namespace vissatellite
             this.satelliteTexture.AssetName = "vissatellite.textures.satellite_texture.jpg";
             this.LoadImageAsset(ref this.satelliteTexture);
 
-            this.normalTexture = new ImageAssetData();
-            this.normalTexture.AssetName = "vissatellite.textures.empty_normal.jpg";
-            this.LoadImageAsset(ref this.normalTexture);
-
-            this.basicShaderAsset = new BasicShaderAssetData();
-            this.basicShaderAsset.VertexShaderName = "vissatellite.shader.Simple_VS.glsl";
-            this.basicShaderAsset.FragmentShaderName = "vissatellite.shader.Simple_FS.glsl";
-            this.LoadShaderAsset(ref this.basicShaderAsset);
+            this.emptyNormalTexture = new ImageAssetData();
+            this.emptyNormalTexture.AssetName = "vissatellite.textures.empty_normal.jpg";
+            this.LoadImageAsset(ref this.emptyNormalTexture);
 
             this.blinnShader = new BlinnShaderAsset();
             this.blinnShader.BasicShader.VertexShaderName = "vissatellite.shader.Blinn_VS.glsl";
@@ -92,49 +87,14 @@ namespace vissatellite
             this.InitSimulationData();
 
             this.keyboardInput = new KeyboardInput();
+            Console.WriteLine();
+            Console.WriteLine("Befehle");
+            Console.WriteLine("simtime time      setzen der simulationsgeschwindigkeit");
+            Console.WriteLine();
+            Console.Write("> ");
+            //Console.WriteLine("camera axis       setzen der camera ansicht");
 
             GL.Enable(EnableCap.DepthTest);
-        }
-
-        private void ProcessConsoleInput()
-        {
-            while(true) {
-                var line = Console.ReadLine();
-                if(line.StartsWith("t:")) {
-                    var time = line.Substring(2);
-                    var newScalar = double.Parse(time);
-                    this.simulationTimeScalar = newScalar;
-                }
-                else if(line.StartsWith("c:")) {
-                    var newCameraPosition = line.Substring(2);
-                    switch(newCameraPosition[0]) {
-                        case 'z':
-                            this.cameraData.Eye = new Vector3(0, 0, 20);
-                            this.cameraData.Direction = new Vector3(0, 0, -1);
-                            this.cameraData.Up = new Vector3(0, 1, 0);
-                            this.UpdateCameraTransformation(ref this.cameraData);
-                            Console.WriteLine($"Camera set to default Z");
-                            break;
-                        case 'x':
-                            this.cameraData.Eye = new Vector3(20, 0, 0);
-                            this.cameraData.Direction = new Vector3(-1, 0, 0);
-                            this.cameraData.Up = new Vector3(0, 1, 0);
-                            this.UpdateCameraTransformation(ref this.cameraData);
-                            Console.WriteLine($"Camera set to default X");
-                            break;
-                        case 'y':
-                            this.cameraData.Eye = new Vector3(0, 20, 0);
-                            this.cameraData.Direction = new Vector3(0, -1, 0);
-                            this.cameraData.Up = new Vector3(0, 0, 1);
-                            this.UpdateCameraTransformation(ref this.cameraData);
-                            Console.WriteLine($"Camera set to default Y");
-                            break;
-                    }
-                }
-                else {
-                    Console.WriteLine($"input: {line}");
-                }
-            }
         }
 
         private void LoadImageAsset(ref ImageAssetData asset)
@@ -399,7 +359,7 @@ namespace vissatellite
             RenderWithBlinn(
                 ref this.satelliteMeshAsset,
                 ref this.satelliteTexture,
-                ref this.normalTexture,
+                ref this.emptyNormalTexture,
                 satelliteMatrix);
 
             var earthMatrix =
@@ -409,18 +369,8 @@ namespace vissatellite
             RenderWithBlinn(
                 ref this.sphereMeshAsset,
                 ref this.earthColorTexture,
-                ref this.normalTexture,
+                ref this.emptyNormalTexture,
                 earthMatrix);
-
-            GL.Begin(PrimitiveType.Lines);
-            GL.LineWidth(5.5f);
-            GL.Color3(1.0, 0.0, 0.0);
-            GL.Vertex3(0.0, 0.0, 0.0);
-            GL.Vertex3(1000, 0, 0);
-            GL.Vertex3(0.0, 0.0, 0.0);
-            GL.Vertex3(0, 1000, 0);
-            GL.End();
-
 #else
 
             var fullRotationTime = 6;
@@ -435,21 +385,21 @@ namespace vissatellite
             RenderWithBlinn(
                 ref this.sphereMeshAsset,
                 ref this.earthColorTexture,
-                ref this.normalTexture,
+                ref this.emptyNormalTexture,
                 earthMatrix);
 
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
+                var selectedScale = satellite.IsSelected ? 5.0f : 1.0f;
                 var satelliteMatrix =
                     Matrix4.Identity *
-                    Matrix4.CreateScale(0.3f) *
+                    Matrix4.CreateScale(this.satelliteSizeScale * selectedScale) *
                     Matrix4.CreateTranslation(satellite.Position);
-
 
                 RenderWithBlinn(
                     ref this.satelliteMeshAsset,
                     ref this.satelliteTexture,
-                    ref this.normalTexture,
+                    ref this.emptyNormalTexture,
                     satelliteMatrix);
             }
 #endif
@@ -458,19 +408,23 @@ namespace vissatellite
 
         private void RenderWithBlinn(
             ref MeshAssetData mesh,
-            ref ImageAssetData earthColorTexture,
+            ref ImageAssetData colorTexture,
             ref ImageAssetData normalTexture,
             Matrix4 modelMatrix)
         {
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.BindTexture(TextureTarget.Texture2D, earthColorTexture.OpenGLHandle);
+            GL.BindTexture(TextureTarget.Texture2D, colorTexture.OpenGLHandle);
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2D, normalTexture.OpenGLHandle);
 
             GL.BindVertexArray(mesh.VertexArrayObjectHandle);
             GL.UseProgram(blinnShader.BasicShader.ProgramHandle);
 
-            var modelViewProjection = modelMatrix * this.cameraData.Transformation * this.cameraData.PerspectiveProjection;
+            var modelViewProjection = 
+                modelMatrix * 
+                this.cameraData.Transformation * 
+                this.cameraData.PerspectiveProjection;
+
             GL.UniformMatrix4(
                 blinnShader.BasicShader.ModelviewProjectionMatrixLocation,
                 false,
@@ -488,42 +442,13 @@ namespace vissatellite
             GL.Uniform4(blinnShader.CameraPositionLocation, new Vector4(this.cameraData.Eye, 1));
 
             GL.DrawElements(
-                    PrimitiveType.Triangles,
-                    mesh.IndicesCount,
-                    DrawElementsType.UnsignedInt,
-                    IntPtr.Zero);
+                PrimitiveType.Triangles,
+                mesh.IndicesCount,
+                DrawElementsType.UnsignedInt,
+                IntPtr.Zero);
 
             GL.BindVertexArray(0);
             GL.ActiveTexture(TextureUnit.Texture0);
-
-        }
-
-        private void RenderWithBasicShader(
-            ref MeshAssetData mesh,
-            ref ImageAssetData texture,
-            Matrix4 modelMatrix)
-        {
-            GL.BindTexture(TextureTarget.Texture2D, texture.OpenGLHandle);
-            GL.BindVertexArray(mesh.VertexArrayObjectHandle);
-            GL.UseProgram(basicShaderAsset.ProgramHandle);
-
-            var modelViewProjection =
-                modelMatrix *
-                this.cameraData.Transformation *
-                this.cameraData.PerspectiveProjection;
-
-            GL.UniformMatrix4(
-                basicShaderAsset.ModelviewProjectionMatrixLocation,
-                false,
-                ref modelViewProjection);
-
-            GL.DrawElements(
-                    PrimitiveType.Triangles,
-                    mesh.IndicesCount,
-                    DrawElementsType.UnsignedInt,
-                    IntPtr.Zero);
-
-            GL.BindVertexArray(0);
         }
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
@@ -546,33 +471,51 @@ namespace vissatellite
             var mouseRay = mouseVector.Xyz - this.cameraData.Eye;
             mouseRay.Normalize();
 
+#if false
+            var minHitDistance = float.PositiveInfinity;
+            var minHitDistanceIndex = 0;
+            var hitSatellite = false;
+            for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
+                var satellite = this.simulationData.Satellites[i];
+                if(hitSatellite) {
+                    satellite.IsSelected = false;
+                }
+                else {
+                    var sPosition = satellite.Position;
+                    var distance = CalculateDistancePointLine(
+                        this.cameraData.Eye,
+                        mouseRay,
+                        sPosition);
+
+                    if(minHitDistance > distance) {
+                        minHitDistance = distance;
+                        minHitDistanceIndex = i;
+                    }
+
+                    if(distance < 0.5 * this.satelliteSizeScale){
+                        satellite.IsSelected = true;
+                        hitSatellite = true;
+                        Console.WriteLine($"Satellite Hit: {satellite.Name}");
+                    }
+                }
+            }
+            Console.WriteLine($"MinHitDistance: {minHitDistance}");
+#else
             var earthPosition = new Vector3(0, 0, 0);
+            var earthRadius = 0.5 * this.earthDiameter * this.simulationSizeScalar;
+
             var distance = CalculateDistancePointLine(
                 this.cameraData.Eye,
                 mouseRay,
                 earthPosition);
-
-            if(distance <= 0.5) {
-                Console.WriteLine("ERDE SELEKTIERT");
+            if(earthRadius < distance) {
+                Console.WriteLine("earth selected");
             }
-
-//            Console.WriteLine($"Eye: {this.cameraData.Eye.X}, {this.cameraData.Eye.Y}, {this.cameraData.Eye.Z}");
-//            Console.WriteLine($"Ray: {mouseRay.X}, {mouseRay.Y}, {mouseRay.Z}");
-//            Console.WriteLine($"Distance: {distance}");
-//            Console.WriteLine();
-        }
-
-        private float CalculateDistancePointLine(Vector3 linePoint, Vector3 lineDirection, Vector3 point)
-        {
-            float planeA = lineDirection.X;
-            float planeB = lineDirection.Y;
-            float planeC = lineDirection.Z;
-            float planeD = Vector3.Dot(lineDirection, point);
-            float lambda = (-planeD - planeA * linePoint.X - planeB * linePoint.Y - planeC * linePoint.Z) /
-                           (planeA * lineDirection.X + planeB * lineDirection.Y + planeC * lineDirection.Z);
-            var pointOnPlane = linePoint + lineDirection * lambda;
-            float distance = Vector3.Distance(pointOnPlane, point);
-            return distance;
+            Console.WriteLine($"Eye: {this.cameraData.Eye.X}, {this.cameraData.Eye.Y}, {this.cameraData.Eye.Z}");
+            Console.WriteLine($"Ray: {mouseRay.X}, {mouseRay.Y}, {mouseRay.Z}");
+            Console.WriteLine($"Distance: {distance}");
+            Console.WriteLine($"Earth Radius: {earthRadius}");
+#endif
         }
 
 
@@ -680,8 +623,10 @@ namespace vissatellite
         {
             this.consoleTask.Wait(0);
             this.UnloadImageAsset(this.earthColorTexture);
-            this.UnloadShaderAsset(this.basicShaderAsset);
+            this.UnloadImageAsset(this.emptyNormalTexture);
+            this.UnloadImageAsset(this.satelliteTexture);
             this.UnloadMeshData(this.sphereMeshAsset);
+            this.UnloadMeshData(this.satelliteMeshAsset);
         }
 
         private void UnloadShaderAsset(BasicShaderAssetData shaderAsset)
@@ -728,6 +673,38 @@ namespace vissatellite
                     cameraData.Eye,
                     cameraData.Eye + cameraData.Direction,
                     cameraData.Up);
+        }
+
+        private float CalculateDistancePointLine(Vector3 linePoint, Vector3 lineDirection, Vector3 point)
+        {
+            float result = float.PositiveInfinity;
+            float planeA = lineDirection.X;
+            float planeB = lineDirection.Y;
+            float planeC = lineDirection.Z;
+            float planeD = Vector3.Dot(lineDirection, point);
+            float lambda = (-planeD - planeA * linePoint.X - planeB * linePoint.Y - planeC * linePoint.Z) /
+                           (planeA * lineDirection.X + planeB * lineDirection.Y + planeC * lineDirection.Z);
+            if(lambda > 0) {
+                var pointOnPlane = linePoint + lineDirection * lambda;
+                result = Vector3.Distance(pointOnPlane, point);
+            }
+            return result;
+        }
+
+        private void ProcessConsoleInput()
+        {
+            while(true) {
+                var line = Console.ReadLine();
+                if(line.StartsWith("simtime")) {
+                    var time = line.Substring(7);
+                    var newScalar = double.Parse(time.Trim());
+                    this.simulationTimeScalar = newScalar;
+                }
+                else {
+                    Console.WriteLine($"I am a teapot");
+                }
+                Console.Write("> ");
+            }
         }
 
         //
