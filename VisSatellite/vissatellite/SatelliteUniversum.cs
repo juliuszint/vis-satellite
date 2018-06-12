@@ -798,11 +798,6 @@ namespace vissatellite
                 //Calculated what we need
                 satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + simData.RealEarthDiameter) / 2;
 
-                if (satelite.ClassOfOrbit == "GEO")
-                {
-                    Console.WriteLine(elements[13] + "\t" +satelite.Name);
-                }
-
                 //Generate random values for needed object elements that are not in the dataset
                 satelite.LongitudeOfAscendingNode = (float)(rand.NextDouble() * Math.PI * 2);
                 satelite.ArgumentOfPeriapsis = (float) (rand.NextDouble() * Math.PI * 2);
