@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using OpenTK;
 
 namespace vissatellite
@@ -114,6 +115,8 @@ namespace vissatellite
     public class SatelliteSimData
     {
         public Vector3 Position;
+
+        public bool IsVisible;
 
         public string Name;
         public float Apogee;
