@@ -81,11 +81,11 @@ namespace vissatellite
             this.cameraData.Eye = new Vector3(0, 0, 20);
             this.cameraData.Up = new Vector3(0, 1, 0);
             this.cameraData.Direction = new Vector3(0, 0, -1);
-            this.cameraData.zNear = 1.0f;
+            this.cameraData.zNear = 0.1f;
             this.cameraData.zFar = 500.0f;
             UpdateCameraTransformation(ref this.cameraData);
 
-            this.ambientLightDirection = new Vector3(0, -1, 0);
+            this.ambientLightDirection = new Vector3(-1, 0, 0);
             this.ambientLightDirection.Normalize();
             this.InitSimulationData();
 
@@ -93,6 +93,14 @@ namespace vissatellite
             Console.WriteLine();
             Console.WriteLine("Befehle");
             Console.WriteLine("simtime time      setzen der simulationsgeschwindigkeit");
+            Console.WriteLine("filter all        zeigt alle Satelliten an");
+            Console.WriteLine("       none       zeigt keinen Satelliten an");
+            Console.WriteLine("       iridium    zeigt Iridium Satelliten an");
+            Console.WriteLine("       civ        zeigt zivile Satelliten an");
+            Console.WriteLine("       com        zeigt kommerzielle Satelliten an");
+            Console.WriteLine("       mil        zeigt Militär-Satelliten an");
+            Console.WriteLine("       gov        zeigt Regierungs-Satelliten an");
+
             Console.WriteLine();
             Console.Write("> ");
             //Console.WriteLine("camera axis       setzen der camera ansicht");
@@ -751,6 +759,22 @@ namespace vissatellite
                             case "gov":
                                 sat.IsVisible = sat.Users.Contains("Government");
                                 break;
+                            case "geo":
+                                sat.IsVisible = sat.ClassOfOrbit.Equals("GEO");
+                                break;
+                            case "meo":
+                                sat.IsVisible = sat.ClassOfOrbit.Equals("MEO");
+                                break;
+                            case "leo":
+                                sat.IsVisible = sat.ClassOfOrbit.Equals("LEO");
+                                break;
+                            case "elp":
+                                sat.IsVisible = sat.ClassOfOrbit.Equals("Elliptical");
+                                break;
+                            case "dbg":
+                                sat.IsVisible = sat.Name.Contains("Beidou IGSO-3");
+                                break;
+
                         }
                     }
                 }
@@ -789,6 +813,7 @@ namespace vissatellite
                 satelite.IsVisible = true;
                 satelite.Name = elements[0];
                 satelite.Users = elements[4];
+                satelite.ClassOfOrbit = elements[7];
 
                 //Read all the data we have
                 if (!elements[9].Equals(""))
@@ -805,7 +830,10 @@ namespace vissatellite
                 //Calculated what we need
                 satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + simulationData.RealEarthDiameter) / 2;
 
-
+                if (satelite.ClassOfOrbit == "GEO")
+                {
+                    Console.WriteLine(elements[13] + "\t" +satelite.Name);
+                }
 
                 //Generate random values for needed object elements that are not in the dataset
                 satelite.LongitudeOfAscendingNode = (float)(rand.NextDouble() * Math.PI * 2);
@@ -850,7 +878,7 @@ namespace vissatellite
 
 
                     double polarAngle = Math.PI / 2 -
-                                        (trueAnomaly + satellite.LongitudeOfAscendingNode) * satellite.Inclenation;
+                                        (trueAnomaly - Math.PI+ satellite.LongitudeOfAscendingNode) * satellite.Inclenation;
 
 
                     //Convert spherical coordinates to cartesian coordinates

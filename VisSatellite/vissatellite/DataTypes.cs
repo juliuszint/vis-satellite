@@ -126,6 +126,8 @@ namespace vissatellite
 
         public string Name;
         public string Users;
+        public string ClassOfOrbit;
+
 
         public float Apogee;
         public float Perigee;
