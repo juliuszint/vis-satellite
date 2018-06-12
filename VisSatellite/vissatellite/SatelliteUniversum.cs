@@ -227,10 +227,13 @@ namespace vissatellite
 
             var planeMesh = Wavefront.Load(meshAsset.AssetName);
             meshAsset.IndicesCount = planeMesh.Indices.Length;
-            Console.WriteLine($"Loaded {meshAsset.AssetName}:");
-            Console.WriteLine($"x: {planeMesh.xMin} , {planeMesh.xMax}");
-            Console.WriteLine($"y: {planeMesh.yMin} , {planeMesh.yMax}");
-            Console.WriteLine($"z: {planeMesh.zMin} , {planeMesh.zMax}");
+            meshAsset.xMin = planeMesh.xMin;
+            meshAsset.xMax = planeMesh.xMax;
+            meshAsset.yMin = planeMesh.yMin;
+            meshAsset.yMax = planeMesh.yMax;
+            var xMax = Math.Max(Math.Abs(meshAsset.xMin), Math.Abs(meshAsset.xMax));
+            var yMax = Math.Max(Math.Abs(meshAsset.yMin), Math.Abs(meshAsset.yMax));
+            meshAsset.OverallMaximum = Math.Max(xMax, yMax);
 
             // load geometry into gpu memory
             int strideCount = 14;
@@ -353,15 +356,16 @@ namespace vissatellite
 
             var satelliteMatrix =
                 Matrix4.Identity *
-                Matrix4.CreateScale(2) *
-                Matrix4.CreateTranslation(0, 7, 0) *
-                Matrix4.CreateRotationY(rotationAngleRad);
+                Matrix4.CreateScale(this.satelliteSizeScale) *
+                Matrix4.CreateTranslation(this.earthPosition); // *
+                //Matrix4.CreateRotationY(rotationAngleRad);
             RenderWithBlinn(
                 ref this.satelliteMeshAsset,
                 ref this.satelliteTexture,
                 ref this.emptyNormalTexture,
                 satelliteMatrix);
 
+            /*
             var earthMatrix =
                 Matrix4.Identity *
                 Matrix4.CreateRotationY(rotationAngleRad);
@@ -371,6 +375,7 @@ namespace vissatellite
                 ref this.earthColorTexture,
                 ref this.emptyNormalTexture,
                 earthMatrix);
+                */
 #else
 
             var fullRotationTime = 6;
@@ -379,8 +384,8 @@ namespace vissatellite
             var earthMatrix =
                 Matrix4.Identity *
                 Matrix4.CreateRotationY(rotationAngleRad) *
-                Matrix4.CreateScale((float)earthDiameter * (float)simulationSizeScalar);
-
+                Matrix4.CreateScale((float)earthDiameter * (float)simulationSizeScalar) * 
+                Matrix4.CreateTranslation(earthPosition);
 
             RenderWithBlinn(
                 ref this.sphereMeshAsset,
@@ -471,53 +476,58 @@ namespace vissatellite
             var mouseRay = mouseVector.Xyz - this.cameraData.Eye;
             mouseRay.Normalize();
 
-#if false
+#if true
+            var satelliteRadius = this.satelliteMeshAsset.OverallMaximum * this.satelliteSizeScale;
             var minHitDistance = float.PositiveInfinity;
-            var minHitDistanceIndex = 0;
-            var hitSatellite = false;
+            var minHitIndex = -1;
+            var hitCounter = 0;
+            // Note: performance optimierungen möglich
+            // für debugzwecke wird der hittest erstmal für jeden satelliten ausgeführt
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
-                if(hitSatellite) {
-                    satellite.IsSelected = false;
-                }
-                else {
-                    var sPosition = satellite.Position;
-                    var distance = CalculateDistancePointLine(
-                        this.cameraData.Eye,
-                        mouseRay,
-                        sPosition);
+                satellite.IsSelected = false;
+                var sPosition = satellite.Position;
+                var distance = CalculateDistancePointLine(
+                    this.cameraData.Eye,
+                    mouseRay,
+                    sPosition);
 
-                    if(minHitDistance > distance) {
-                        minHitDistance = distance;
-                        minHitDistanceIndex = i;
-                    }
-
-                    if(distance < 0.5 * this.satelliteSizeScale){
-                        satellite.IsSelected = true;
-                        hitSatellite = true;
-                        Console.WriteLine($"Satellite Hit: {satellite.Name}");
-                    }
+                if(minHitDistance > distance) {
+                    minHitDistance = distance;
+                    hitCounter++;
+                    minHitIndex = i;
                 }
             }
-            Console.WriteLine($"MinHitDistance: {minHitDistance}");
+            Console.WriteLine($"SatelliteBoundingRadius: {satelliteRadius}, distance: {minHitDistance}");
+            Console.WriteLine($"Hitcounter: {hitCounter}");
+            if(minHitIndex > 0) {
+                this.simulationData.Satellites[minHitIndex].IsSelected = true;
+            }
+
 #else
-            var earthPosition = new Vector3(0, 0, 0);
-            var earthRadius = 0.5 * this.earthDiameter * this.simulationSizeScalar;
+            var satelliteRadius = this.satelliteMeshAsset.OverallMaximum * this.satelliteSizeScale;
 
             var distance = CalculateDistancePointLine(
                 this.cameraData.Eye,
                 mouseRay,
-                earthPosition);
-            if(earthRadius < distance) {
-                Console.WriteLine("earth selected");
+                this.earthPosition);
+
+            Console.WriteLine($"MouseX    : {e.X}");
+            Console.WriteLine($"MouseY    : {e.Y}");
+            Console.WriteLine($"RelMouseX : {mouseX}");
+            Console.WriteLine($"RelMouseY : {mouseY}");
+            Console.WriteLine($"\rsatellite: {this.earthPosition.X:F3}, {this.earthPosition.Y:F3}, {this.earthPosition.Z:F3}");
+            Console.WriteLine($"ray      : {mouseRay.X:F3}, {mouseRay.Y:F3}, {mouseRay.Z:F3}");
+            Console.WriteLine($"eye      : {this.cameraData.Eye.X:F3}, {this.cameraData.Eye.Y:F3}, {this.cameraData.Eye.Z:F3}");
+            Console.WriteLine($"earth    : {satelliteRadius:F3}");
+            Console.WriteLine($"distance : {distance:F3}");
+            if(distance < satelliteRadius) {
+                Console.WriteLine("EARTH SELECTED !!!!!!!!!!!!!!!!!!!!!!!!!11");
             }
-            Console.WriteLine($"Eye: {this.cameraData.Eye.X}, {this.cameraData.Eye.Y}, {this.cameraData.Eye.Z}");
-            Console.WriteLine($"Ray: {mouseRay.X}, {mouseRay.Y}, {mouseRay.Z}");
-            Console.WriteLine($"Distance: {distance}");
-            Console.WriteLine($"Earth Radius: {earthRadius}");
 #endif
         }
 
+        private Vector3 earthPosition = new Vector3(0, 3, 5);
 
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
@@ -675,15 +685,18 @@ namespace vissatellite
                     cameraData.Up);
         }
 
+        // line direction needs to be normalized
         private float CalculateDistancePointLine(Vector3 linePoint, Vector3 lineDirection, Vector3 point)
         {
             float result = float.PositiveInfinity;
-            float planeA = lineDirection.X;
-            float planeB = lineDirection.Y;
-            float planeC = lineDirection.Z;
-            float planeD = Vector3.Dot(lineDirection, point);
-            float lambda = (-planeD - planeA * linePoint.X - planeB * linePoint.Y - planeC * linePoint.Z) /
-                           (planeA * lineDirection.X + planeB * lineDirection.Y + planeC * lineDirection.Z);
+            var a = linePoint;
+            var r = lineDirection;
+            var p = point;
+            float lambda =
+                r.X * p.X - r.X * a.X + 
+                r.Y * p.Y - r.Y * a.Y + 
+                r.Z * p.Z - r.Z * a.Z;
+
             if(lambda > 0) {
                 var pointOnPlane = linePoint + lineDirection * lambda;
                 result = Vector3.Distance(pointOnPlane, point);

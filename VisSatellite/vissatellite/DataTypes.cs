@@ -52,6 +52,12 @@ namespace vissatellite
         public int VertexBufferHandle;
         public int IndicesBufferHandle;
         public int VertexArrayObjectHandle;
+
+        public float xMin;
+        public float xMax;
+        public float yMin;
+        public float yMax;
+        public float OverallMaximum;
     }
 
     public struct BasicShaderAssetData
