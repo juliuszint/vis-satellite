@@ -13,9 +13,7 @@ namespace vissatellite
 	{
         private bool quit;
         private double elapsedSeconds;
-        private double simulationTimeScalar;
 	    private double simulationSizeScalar;
-	    private double earthDiameter = 12742;
         private float satelliteSizeScale = 0.3f;
 
         private ImageAssetData earthColorTexture;
@@ -47,7 +45,7 @@ namespace vissatellite
             this.consoleTask = Task.Run((Action)this.ProcessConsoleInput);
             Console.WriteLine($"OpenGL Version: {openGlVersion}");
             Console.WriteLine($"OpenGL Shader Language Version: {openGlShaderLanguageVersion}");
-            this.simulationTimeScalar = 1.0;
+
             this.simulationSizeScalar = 0.001f;
 
             this.sphereMeshAsset = new MeshAssetData();
@@ -378,14 +376,11 @@ namespace vissatellite
                 */
 #else
 
-            var fullRotationTime = 6;
-            var rotationAngleRad = (float)(((this.elapsedSeconds % fullRotationTime) / fullRotationTime) * 2 * Math.PI);
 
             var earthMatrix =
                 Matrix4.Identity *
-                Matrix4.CreateRotationY(rotationAngleRad) *
-                Matrix4.CreateScale((float)earthDiameter * (float)simulationSizeScalar) * 
-                Matrix4.CreateTranslation(earthPosition);
+                Matrix4.CreateRotationY(simulationData.CurrentEarthRotation) *
+                Matrix4.CreateScale((float)simulationData.RealEarthDiameter * (float)simulationSizeScalar);
 
             RenderWithBlinn(
                 ref this.sphereMeshAsset,
@@ -395,17 +390,21 @@ namespace vissatellite
 
             for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
                 var satellite = this.simulationData.Satellites[i];
-                var selectedScale = satellite.IsSelected ? 5.0f : 1.0f;
-                var satelliteMatrix =
-                    Matrix4.Identity *
-                    Matrix4.CreateScale(this.satelliteSizeScale * selectedScale) *
-                    Matrix4.CreateTranslation(satellite.Position);
 
-                RenderWithBlinn(
-                    ref this.satelliteMeshAsset,
-                    ref this.satelliteTexture,
-                    ref this.emptyNormalTexture,
-                    satelliteMatrix);
+                if (satellite.IsVisible)
+                {
+                    var selectedScale = satellite.IsSelected ? 5.0f : 1.0f;
+                    var satelliteMatrix =
+                        Matrix4.Identity *
+                        Matrix4.CreateScale(this.satelliteSizeScale * selectedScale) *
+                        Matrix4.CreateTranslation(satellite.Position);
+
+                    RenderWithBlinn(
+                        ref this.satelliteMeshAsset,
+                        ref this.satelliteTexture,
+                        ref this.emptyNormalTexture,
+                        satelliteMatrix);
+                }
             }
 #endif
             this.SwapBuffers();
@@ -425,9 +424,9 @@ namespace vissatellite
             GL.BindVertexArray(mesh.VertexArrayObjectHandle);
             GL.UseProgram(blinnShader.BasicShader.ProgramHandle);
 
-            var modelViewProjection = 
-                modelMatrix * 
-                this.cameraData.Transformation * 
+            var modelViewProjection =
+                modelMatrix *
+                this.cameraData.Transformation *
                 this.cameraData.PerspectiveProjection;
 
             GL.UniformMatrix4(
@@ -506,6 +505,8 @@ namespace vissatellite
 
 #else
             var satelliteRadius = this.satelliteMeshAsset.OverallMaximum * this.satelliteSizeScale;
+            var earthPosition = new Vector3(0, 0, 0);
+            var earthRadius = 0.5 * this.simulationData.RealEarthDiameter * this.simulationSizeScalar;
 
             var distance = CalculateDistancePointLine(
                 this.cameraData.Eye,
@@ -711,7 +712,39 @@ namespace vissatellite
                 if(line.StartsWith("simtime")) {
                     var time = line.Substring(7);
                     var newScalar = double.Parse(time.Trim());
-                    this.simulationTimeScalar = newScalar;
+                    this.simulationData.SimulationSpeed = newScalar;
+                }
+                else if (line.StartsWith("filter"))
+                {
+                    var filter = line.Substring(7);
+
+                    foreach(var sat in simulationData.Satellites)
+                    {
+                        switch (filter)
+                        {
+                            case "all":
+                                sat.IsVisible = true;
+                                break;
+                            case "none":
+                                sat.IsVisible = false;
+                                break;
+                            case "iridium":
+                                sat.IsVisible = sat.Name.Contains("Iridium");
+                                break;
+                            case "civ":
+                                sat.IsVisible = sat.Users.Contains("Civil");
+                                break;
+                            case "com":
+                                sat.IsVisible = sat.Users.Contains("Commercial");
+                                break;
+                            case "mil":
+                                sat.IsVisible = sat.Users.Contains("Military");
+                                break;
+                            case "gov":
+                                sat.IsVisible = sat.Users.Contains("Government");
+                                break;
+                        }
+                    }
                 }
                 else {
                     Console.WriteLine($"I am a teapot");
@@ -727,8 +760,10 @@ namespace vissatellite
         private void InitSimulationData()
         {
             this.simulationData = new SimData();
-            this.simulationData.TotalSimulationTime = 0;
-            this.simulationData.SimulationSpeed = 1.0f;
+
+            this.simulationData.CurrentEarthRotation = 0;
+            this.simulationData.SimulationSpeed = 1000.0f;
+
 
             var satelites = new List<SatelliteSimData>();
             var satDataStream = Utils.OpenEmbeddedResource("vissatellite.simdata.UCS_Satellite_Database_9-1-2017.txt");
@@ -743,8 +778,9 @@ namespace vissatellite
                 string[] elements = line.Split('\t');
 
                 var satelite = new SatelliteSimData();
+                satelite.IsVisible = true;
                 satelite.Name = elements[0];
-
+                satelite.Users = elements[4];
 
                 //Read all the data we have
                 if (!elements[9].Equals(""))
@@ -759,7 +795,7 @@ namespace vissatellite
                 satelites.Add(satelite);
 
                 //Calculated what we need
-                satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + earthDiameter) / 2;
+                satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + simulationData.RealEarthDiameter) / 2;
 
 
 
@@ -777,37 +813,48 @@ namespace vissatellite
 
         private void DoSimulation(double fTimeDelta)
         {
+
+            double time = elapsedSeconds * simulationData.SimulationSpeed;
+
+            simulationData.CurrentEarthRotation = (float)((time % this.simulationData.RealEarthPeriode / this.simulationData.RealEarthPeriode) * 2 * Math.PI);
+
+
             for (int i = 0; i < this.simulationData.Satellites.Length; i++)
             {
+
                 var satellite = this.simulationData.Satellites[i];
-                double time = elapsedSeconds * 1000 * this.simulationTimeScalar;
 
-                double meanAnomaly = satellite.ArgumentOfPeriapsis;
-                meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
+                if (satellite.IsVisible)
+                {
+                    double meanAnomaly = satellite.ArgumentOfPeriapsis;
+                    meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
 
-                //Calc aproximated true anomaly
-                double trueAnomaly = meanAnomaly;
-                trueAnomaly += 2 * satellite.Eccentricity * Math.Sin(meanAnomaly);
-                trueAnomaly += 5.0f/4.0f * (satellite.Eccentricity * satellite.Eccentricity * Math.Sin(2* meanAnomaly));
-
-
-                double distance = satellite.SemiMajorAxis;
-                distance *= (1 - satellite.Eccentricity * satellite.Eccentricity) /
-                            (1 + satellite.Eccentricity *  Math.Cos(trueAnomaly));
+                    //Calc aproximated true anomaly
+                    double trueAnomaly = meanAnomaly;
+                    trueAnomaly += 2 * satellite.Eccentricity * Math.Sin(meanAnomaly);
+                    trueAnomaly += 5.0f / 4.0f *
+                                   (satellite.Eccentricity * satellite.Eccentricity * Math.Sin(2 * meanAnomaly));
 
 
-                double polarAngle = Math.PI/2 - (trueAnomaly +satellite.LongitudeOfAscendingNode) * satellite.Inclenation;
+                    double distance = satellite.SemiMajorAxis;
+                    distance *= (1 - satellite.Eccentricity * satellite.Eccentricity) /
+                                (1 + satellite.Eccentricity * Math.Cos(trueAnomaly));
 
 
-                //Convert polar coordinates to cartesian coordinates
-                double posX = distance * Math.Sin(trueAnomaly) * Math.Sin(polarAngle);
-                double posZ = distance * Math.Cos(trueAnomaly) * Math.Sin(polarAngle);
-                double posY = distance * Math.Cos(polarAngle);
+                    double polarAngle = Math.PI / 2 -
+                                        (trueAnomaly + satellite.LongitudeOfAscendingNode) * satellite.Inclenation;
 
 
-                satellite.Position.X = (float)posX * (float)simulationSizeScalar;
-                satellite.Position.Y = (float)posY * (float)simulationSizeScalar;
-                satellite.Position.Z = (float)posZ * (float)simulationSizeScalar;
+                    //Convert spherical coordinates to cartesian coordinates
+                    double posX = distance * Math.Sin(trueAnomaly) * Math.Sin(polarAngle);
+                    double posZ = distance * Math.Cos(trueAnomaly) * Math.Sin(polarAngle);
+                    double posY = distance * Math.Cos(polarAngle);
+
+
+                    satellite.Position.X = (float) posX * (float) simulationSizeScalar;
+                    satellite.Position.Y = (float) posY * (float) simulationSizeScalar;
+                    satellite.Position.Z = (float) posZ * (float) simulationSizeScalar;
+                }
             }
         }
     }

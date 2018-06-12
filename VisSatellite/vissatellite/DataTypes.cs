@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using OpenTK;
 
 namespace vissatellite
@@ -108,9 +109,12 @@ namespace vissatellite
 
     public class SimData
     {
-        public float TotalSimulationTime;
-        public float SimulationSpeed;
+        public float RealEarthPeriode = 24 * 60 * 60;
+        public float RealEarthDiameter = 12742;
 
+        public double SimulationSpeed;
+
+        public float CurrentEarthRotation;
         public SatelliteSimData[] Satellites;
     }
 
@@ -118,7 +122,11 @@ namespace vissatellite
     {
         public Vector3 Position;
 
+        public bool IsVisible;
+
         public string Name;
+        public string Users;
+
         public float Apogee;
         public float Perigee;
         public float LongitudeOfGeo;
