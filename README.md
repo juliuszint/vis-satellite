@@ -25,7 +25,7 @@ All additional resources that the program needs for execution are part of the as
 The `meshes` directory contains Wavefront (.obj) files for all the geometry used. The `shader` directory contains source code for a fragment and vertex shader with very primitive lighting. The `simdata` directory contains a single `.txt` file with all the satellite informations and the `textures` directory contains colortextures as well as a empty normal texture.
 
 #### Source
-Five `.cs` files make up the entire source code for this small program. 
+Five `.cs` files make up the entire source code for this tiny program. 
 
 `Utils.cs` is a small file with two extension methods for working with embedded resources. One for loading the entire resource as string and the other for opening a stream to a embedded resource.
 
@@ -33,4 +33,8 @@ Five `.cs` files make up the entire source code for this small program.
 
 `Wavefront.cs` has a single static class named `Wavefront` with only a single used public method `ObjectVertexData Load(string filename)`. It parses the specified wavefront file, Calculates the Tangents and Bitangents using the uv coordinates and also evaluates the absolute maximum value for all vertices. This is used for creating a bounding sphere for ray picking.
 
-`DataTypes.cs` defines all datatypes on which the main code operates on. 
+`DataTypes.cs` defines all datatypes on which the main code operates on. This project tries, just for fun, a data oriented design which seperates the data from code. The `GameData` class is the root of all evil and contains all game state. The bulk are loaded assets with their OpenGL handle and the simulation state.
+
+`SatelliteUniverse.cs` is the largest file containing all of the logic. Starting on top with some boilerplate code it continues with the `OnLoad` method that is responsible for loading all assets. This includes pushing these into the GPU memory and storing the handle. Next up is the rendering code that puts one earth to the screen and all the satellites. Following is input processing code with the camera movement and the, in a seperate thread executing, `ProcessConsoleInput` method that takes care of reading and processing commands typed into the console. Some unloading code that first and foremost is probably incomplete, but not really necessary since every GPU should be able to store all assets.
+
+TODO: simulation code
