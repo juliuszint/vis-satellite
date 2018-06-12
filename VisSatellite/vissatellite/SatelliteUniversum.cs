@@ -717,8 +717,18 @@ namespace vissatellite
                             case "iridium":
                                 sat.IsVisible = sat.Name.Contains("Iridium");
                                 break;
-
-
+                            case "civ":
+                                sat.IsVisible = sat.Users.Contains("Civil");
+                                break;
+                            case "com":
+                                sat.IsVisible = sat.Users.Contains("Commercial");
+                                break;
+                            case "mil":
+                                sat.IsVisible = sat.Users.Contains("Military");
+                                break;
+                            case "gov":
+                                sat.IsVisible = sat.Users.Contains("Government");
+                                break;
                         }
                     }
                 }
@@ -756,7 +766,7 @@ namespace vissatellite
                 var satelite = new SatelliteSimData();
                 satelite.IsVisible = true;
                 satelite.Name = elements[0];
-
+                satelite.Users = elements[4];
 
                 //Read all the data we have
                 if (!elements[9].Equals(""))

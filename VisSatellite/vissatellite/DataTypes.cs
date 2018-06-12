@@ -119,6 +119,8 @@ namespace vissatellite
         public bool IsVisible;
 
         public string Name;
+        public string Users;
+
         public float Apogee;
         public float Perigee;
         public float LongitudeOfGeo;
