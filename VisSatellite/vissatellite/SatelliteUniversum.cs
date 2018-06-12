@@ -109,7 +109,7 @@ namespace vissatellite
 
         private void LoadImageAsset(ref ImageAssetData asset)
         {
-            if (asset.IsLoaded) 
+            if (asset.IsLoaded)
                 return;
 
             int textureHandle = GL.GenTexture();
@@ -378,7 +378,7 @@ namespace vissatellite
                         Matrix4.CreateScale(this.satelliteSizeScale) *
                         Matrix4.CreateTranslation(satellite.Position);
 
-                    var texture = satellite.IsSelected 
+                    var texture = satellite.IsSelected
                         ? this.satelliteTextureSelected
                         : this.satelliteTexture;
 
@@ -437,7 +437,7 @@ namespace vissatellite
             GL.ActiveTexture(TextureUnit.Texture0);
         }
 
-        // 
+        //
         // input processing
         //
         protected override void OnMouseUp(MouseButtonEventArgs e)
@@ -468,6 +468,8 @@ namespace vissatellite
                 selectedSatellite.IsSelected = true;
                 Console.WriteLine($"\rInformationen zum ausgewählten Satelliten:");
                 Console.WriteLine($"Name: {selectedSatellite.Name}");
+                Console.WriteLine($"Inc: {selectedSatellite.Inclenation * 180/Math.PI}");
+
                 Console.Write("> ");
             }
         }
@@ -623,7 +625,7 @@ namespace vissatellite
                                 sat.IsVisible = sat.ClassOfOrbit.Equals("Elliptical");
                                 break;
                             case "dbg":
-                                sat.IsVisible = sat.Name.Contains("Beidou IGSO-3");
+                                sat.IsVisible = sat.Name.Contains("Beidou IGSO-4");
                                 break;
 
                         }
@@ -735,8 +737,8 @@ namespace vissatellite
             var r = lineDirection;
             var p = point;
             float lambda =
-                r.X * p.X - r.X * a.X + 
-                r.Y * p.Y - r.Y * a.Y + 
+                r.X * p.X - r.X * a.X +
+                r.Y * p.Y - r.Y * a.Y +
                 r.Z * p.Z - r.Z * a.Z;
 
             if(lambda > 0) {
@@ -826,6 +828,8 @@ namespace vissatellite
                     double meanAnomaly = satellite.ArgumentOfPeriapsis;
                     meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
 
+                    meanAnomaly %= Math.PI * 2;
+
                     //Calc aproximated true anomaly
                     double trueAnomaly = meanAnomaly;
                     trueAnomaly += 2 * satellite.Eccentricity * Math.Sin(meanAnomaly);
@@ -838,14 +842,19 @@ namespace vissatellite
                                 (1 + satellite.Eccentricity * Math.Cos(trueAnomaly));
 
 
-                    double polarAngle = Math.PI / 2 -
-                                        (trueAnomaly - Math.PI+ satellite.LongitudeOfAscendingNode) * satellite.Inclenation;
+                    double polarAngle = Math.Sin(trueAnomaly + satellite.LongitudeOfAscendingNode) * satellite.Inclenation;
 
 
+
+                    if (satellite.IsSelected)
+                        Console.WriteLine(trueAnomaly +"\t\t\t" + Math.Sin(trueAnomaly) + "\t\t"+ polarAngle + "\t\t\t" + polarAngle* 180/(float)Math.PI);
+
+
+                    //Console.WriteLine(satellite.Inclenation *180/Math.PI + "\t" + polarAngle * 180 / Math.PI);
                     //Convert spherical coordinates to cartesian coordinates
-                    double posX = distance * Math.Sin(trueAnomaly) * Math.Sin(polarAngle);
-                    double posZ = distance * Math.Cos(trueAnomaly) * Math.Sin(polarAngle);
-                    double posY = distance * Math.Cos(polarAngle);
+                    double posX = distance * Math.Sin(trueAnomaly) * Math.Cos(polarAngle);
+                    double posZ = distance * Math.Cos(trueAnomaly) * Math.Cos(polarAngle);
+                    double posY = distance * Math.Sin(polarAngle);
 
 
                     satellite.Position.X = (float) posX * (float) simulationSizeScalar;
