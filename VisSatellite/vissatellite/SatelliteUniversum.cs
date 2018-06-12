@@ -92,14 +92,19 @@ namespace vissatellite
             this.keyboardInput = new KeyboardInput();
             Console.WriteLine();
             Console.WriteLine("Befehle");
-            Console.WriteLine("simtime time      setzen der simulationsgeschwindigkeit");
-            Console.WriteLine("filter all        zeigt alle Satelliten an");
-            Console.WriteLine("       none       zeigt keinen Satelliten an");
-            Console.WriteLine("       iridium    zeigt Iridium Satelliten an");
-            Console.WriteLine("       civ        zeigt zivile Satelliten an");
-            Console.WriteLine("       com        zeigt kommerzielle Satelliten an");
-            Console.WriteLine("       mil        zeigt Milit?r-Satelliten an");
-            Console.WriteLine("       gov        zeigt Regierungs-Satelliten an");
+            Console.WriteLine("simtime time    setzen der simulationsgeschwindigkeit");
+            Console.WriteLine("show all        zeigt alle Satelliten an");
+            Console.WriteLine("     none       zeigt keinen Satelliten an");
+            Console.WriteLine("     iridium    zeigt Iridium Satelliten an");
+            Console.WriteLine("     civ        zeigt zivile Satelliten an");
+            Console.WriteLine("     com        zeigt kommerzielle Satelliten an");
+            Console.WriteLine("     mil        zeigt Milit?r-Satelliten an");
+            Console.WriteLine("     gov        zeigt Regierungs-Satelliten an");
+            Console.WriteLine("     geo        zeigt Satelliten im GEO an");
+            Console.WriteLine("     meo        zeigt Satelliten im MEO an");
+            Console.WriteLine("     leo        zeigt Satelliten im LEO an");
+            Console.WriteLine("     elp        zeigt Satelliten in eliptischen Umlaufbahnen an");
+
 
             Console.WriteLine();
             Console.Write("> ");
@@ -465,12 +470,23 @@ namespace vissatellite
 
             if(minHitIndex > 0) {
                 var selectedSatellite = this.simulationData.Satellites[minHitIndex];
-                selectedSatellite.IsSelected = true;
-                Console.WriteLine($"\rInformationen zum ausgewählten Satelliten:");
-                Console.WriteLine($"Name: {selectedSatellite.Name}");
-                Console.WriteLine($"Inc: {selectedSatellite.Inclenation * 180/Math.PI}");
 
-                Console.Write("> ");
+                if (selectedSatellite.IsVisible)
+                {
+                    selectedSatellite.IsSelected = true;
+                    Console.WriteLine($"\rInformationen zum ausgewählten Satelliten:");
+                    Console.WriteLine($"Name: {selectedSatellite.Name}");
+                    Console.WriteLine($"Verwender: {selectedSatellite.Users}");
+
+                    Console.WriteLine($"Orbit Typ: {selectedSatellite.ClassOfOrbit}");
+                    Console.WriteLine($"Apoapsis: {selectedSatellite.Apogee} km");
+                    Console.WriteLine($"Periapsis: {selectedSatellite.Perigee} km");
+                    Console.WriteLine($"Exzentrizität: {selectedSatellite.Eccentricity}");
+                    Console.WriteLine($"Bahnneigung: {selectedSatellite.Inclenation * 180 / Math.PI}°");
+
+                    Console.Write("> ");
+                }
+
             }
         }
 
@@ -583,9 +599,9 @@ namespace vissatellite
                     var newScalar = double.Parse(time.Trim());
                     this.simulationData.SimulationSpeed = newScalar;
                 }
-                else if (line.StartsWith("filter"))
+                else if (line.StartsWith("show"))
                 {
-                    var filter = line.Substring(7);
+                    var filter = line.Substring(5);
 
                     foreach(var sat in simulationData.Satellites)
                     {
@@ -623,9 +639,6 @@ namespace vissatellite
                                 break;
                             case "elp":
                                 sat.IsVisible = sat.ClassOfOrbit.Equals("Elliptical");
-                                break;
-                            case "dbg":
-                                sat.IsVisible = sat.Name.Contains("Beidou IGSO-4");
                                 break;
 
                         }
@@ -801,10 +814,6 @@ namespace vissatellite
                 //Generate random values for needed object elements that are not in the dataset
                 satelite.LongitudeOfAscendingNode = (float)(rand.NextDouble() * Math.PI * 2);
                 satelite.ArgumentOfPeriapsis = (float) (rand.NextDouble() * Math.PI * 2);
-                //satelite.ArgumentOfPeriapsis = 0;
-                //TODO: remove temp hack for not loading all satelites
-                //if (satelites.Count >50)
-                //    break;
             }
 
             this.simulationData.Satellites = satelites.ToArray();
@@ -844,13 +853,6 @@ namespace vissatellite
 
                     double polarAngle = Math.Sin(trueAnomaly + satellite.LongitudeOfAscendingNode) * satellite.Inclenation;
 
-
-
-                    if (satellite.IsSelected)
-                        Console.WriteLine(trueAnomaly +"\t\t\t" + Math.Sin(trueAnomaly) + "\t\t"+ polarAngle + "\t\t\t" + polarAngle* 180/(float)Math.PI);
-
-
-                    //Console.WriteLine(satellite.Inclenation *180/Math.PI + "\t" + polarAngle * 180 / Math.PI);
                     //Convert spherical coordinates to cartesian coordinates
                     double posX = distance * Math.Sin(trueAnomaly) * Math.Cos(polarAngle);
                     double posZ = distance * Math.Cos(trueAnomaly) * Math.Cos(polarAngle);
