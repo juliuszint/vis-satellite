@@ -528,8 +528,6 @@ namespace vissatellite
 #endif
         }
 
-        private Vector3 earthPosition = new Vector3(0, 3, 5);
-
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
             if (e.Key == Key.W)
