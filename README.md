@@ -32,3 +32,5 @@ Five `.cs` files make up the entire source code for this small program.
 `Program.cs` contains only 2 important lines of code that create a instance of the `SatelliteUniverse` class and execute the `Run` method.
 
 `Wavefront.cs` has a single static class named `Wavefront` with only a single used public method `ObjectVertexData Load(string filename)`. It parses the specified wavefront file, Calculates the Tangents and Bitangents using the uv coordinates and also evaluates the absolute maximum value for all vertices. This is used for creating a bounding sphere for ray picking.
+
+`DataTypes.cs` defines all datatypes on which the main code operates on. 

@@ -11,24 +11,7 @@ namespace vissatellite
 {
 	public class SatelliteUniverse : GameWindow
 	{
-        private bool quit;
-        private double elapsedSeconds;
-	    private double simulationSizeScalar;
-        private float satelliteSizeScale = 0.3f;
-
-        private ImageAssetData earthColorTexture;
-        private ImageAssetData satelliteTexture;
-        private ImageAssetData satelliteTextureSelected;
-        private ImageAssetData emptyNormalTexture;
-        private MeshAssetData sphereMeshAsset;
-        private MeshAssetData satelliteMeshAsset;
-        private CameraData cameraData;
-
-        private BlinnShaderAsset blinnShader;
-        private Vector3 ambientLightDirection;
-        private SimData simulationData;
-        private KeyboardInput keyboardInput;
-        private Task consoleTask;
+        private GameData gameData;
 
 		public SatelliteUniverse(int width, int height) : base(
             width,
@@ -43,53 +26,57 @@ namespace vissatellite
         {
             var openGlVersion = GL.GetString(StringName.Version);
             var openGlShaderLanguageVersion = GL.GetString(StringName.ShadingLanguageVersion);
-            this.consoleTask = Task.Run((Action)this.ProcessConsoleInput);
             Console.WriteLine($"OpenGL Version: {openGlVersion}");
             Console.WriteLine($"OpenGL Shader Language Version: {openGlShaderLanguageVersion}");
 
-            this.simulationSizeScalar = 0.001f;
+            this.gameData = new GameData();
+            this.gameData.ConsoleTask = Task.Run((Action)this.ProcessConsoleInput);
 
-            this.sphereMeshAsset = new MeshAssetData();
-            this.sphereMeshAsset.AssetName = "vissatellite.meshes.sphere.obj";
-            this.LoadMeshAsset(ref this.sphereMeshAsset);
+            this.gameData.SphereMeshAsset = new MeshAssetData();
+            this.gameData.SphereMeshAsset.AssetName = "vissatellite.meshes.sphere.obj";
+            this.LoadMeshAsset(this.gameData.SphereMeshAsset);
 
-            this.satelliteMeshAsset = new MeshAssetData();
-            this.satelliteMeshAsset.AssetName = "vissatellite.meshes.satellite.obj";
-            this.LoadMeshAsset(ref this.satelliteMeshAsset);
+            this.gameData.SatelliteMeshAsset = new MeshAssetData();
+            this.gameData.SatelliteMeshAsset.AssetName = "vissatellite.meshes.satellite.obj";
+            this.LoadMeshAsset(this.gameData.SatelliteMeshAsset);
 
-            this.earthColorTexture = new ImageAssetData();
-            this.earthColorTexture.AssetName = "vissatellite.textures.earth.jpg";
-            this.LoadImageAsset(ref this.earthColorTexture);
+            this.gameData.EarthColorTexture = new ImageAssetData();
+            this.gameData.EarthColorTexture.AssetName = "vissatellite.textures.earth.jpg";
+            this.LoadImageAsset(this.gameData.EarthColorTexture);
 
-            this.satelliteTexture = new ImageAssetData();
-            this.satelliteTexture.AssetName = "vissatellite.textures.satellite_texture.jpg";
-            this.LoadImageAsset(ref this.satelliteTexture);
+            this.gameData.SatelliteTexture = new ImageAssetData();
+            this.gameData.SatelliteTexture.AssetName = "vissatellite.textures.satellite_texture.jpg";
+            this.LoadImageAsset(this.gameData.SatelliteTexture);
 
-            this.satelliteTextureSelected = new ImageAssetData();
-            this.satelliteTextureSelected.AssetName = "vissatellite.textures.satellite_texture_selected.jpg";
-            this.LoadImageAsset(ref this.satelliteTextureSelected);
+            this.gameData.SatelliteTextureSelected = new ImageAssetData();
+            this.gameData.SatelliteTextureSelected.AssetName = "vissatellite.textures.satellite_texture_selected.jpg";
+            this.LoadImageAsset(this.gameData.SatelliteTextureSelected);
 
-            this.emptyNormalTexture = new ImageAssetData();
-            this.emptyNormalTexture.AssetName = "vissatellite.textures.empty_normal.jpg";
-            this.LoadImageAsset(ref this.emptyNormalTexture);
+            this.gameData.EmptyNormalTexture = new ImageAssetData();
+            this.gameData.EmptyNormalTexture.AssetName = "vissatellite.textures.empty_normal.jpg";
+            this.LoadImageAsset(this.gameData.EmptyNormalTexture);
 
-            this.blinnShader = new BlinnShaderAsset();
-            this.blinnShader.BasicShader.VertexShaderName = "vissatellite.shader.Blinn_VS.glsl";
-            this.blinnShader.BasicShader.FragmentShaderName = "vissatellite.shader.Blinn_FS.glsl";
-            this.LoadBlinnShaderAsset(ref this.blinnShader);
+            this.gameData.BlinnShader = new BlinnShaderAsset();
+            this.gameData.BlinnShader.BasicShader = new BasicShaderAssetData();
+            this.gameData.BlinnShader.BasicShader.VertexShaderName = "vissatellite.shader.Blinn_VS.glsl";
+            this.gameData.BlinnShader.BasicShader.FragmentShaderName = "vissatellite.shader.Blinn_FS.glsl";
+            this.LoadBlinnShaderAsset(this.gameData.BlinnShader);
 
-            this.cameraData.Eye = new Vector3(0, 0, 20);
-            this.cameraData.Up = new Vector3(0, 1, 0);
-            this.cameraData.Direction = new Vector3(0, 0, -1);
-            this.cameraData.zNear = 0.1f;
-            this.cameraData.zFar = 500.0f;
-            UpdateCameraTransformation(ref this.cameraData);
+            this.gameData.CameraData = new CameraData();
+            this.gameData.CameraData.Eye = new Vector3(0, 0, 20);
+            this.gameData.CameraData.Up = new Vector3(0, 1, 0);
+            this.gameData.CameraData.Direction = new Vector3(0, 0, -1);
+            this.gameData.CameraData.zNear = 0.1f;
+            this.gameData.CameraData.zFar = 500.0f;
+            UpdateCameraTransformation(this.gameData.CameraData);
 
-            this.ambientLightDirection = new Vector3(-1, 0, 0);
-            this.ambientLightDirection.Normalize();
-            this.InitSimulationData();
+            this.gameData.AmbientLightDirection = new Vector3(-1, 0, 0);
+            this.gameData.AmbientLightDirection.Normalize();
+            this.gameData.SimulationData = new SimData();
+            this.InitSimulationData(this.gameData.SimulationData);
 
-            this.keyboardInput = new KeyboardInput();
+            this.gameData.KeyboardInput = new KeyboardInput();
+
             Console.WriteLine();
             Console.WriteLine("Befehle");
             Console.WriteLine("simtime time    setzen der simulationsgeschwindigkeit");
@@ -105,14 +92,13 @@ namespace vissatellite
             Console.WriteLine("     leo        zeigt Satelliten im LEO an");
             Console.WriteLine("     elp        zeigt Satelliten in eliptischen Umlaufbahnen an");
 
-
             Console.WriteLine();
             Console.Write("> ");
 
             GL.Enable(EnableCap.DepthTest);
         }
 
-        private void LoadImageAsset(ref ImageAssetData asset)
+        private void LoadImageAsset(ImageAssetData asset)
         {
             if (asset.IsLoaded)
                 return;
@@ -166,9 +152,9 @@ namespace vissatellite
             asset.IsLoaded = true;
         }
 
-        private void LoadBlinnShaderAsset(ref BlinnShaderAsset shader)
+        private void LoadBlinnShaderAsset(BlinnShaderAsset shader)
         {
-            this.LoadShaderAsset(ref shader.BasicShader);
+            this.LoadShaderAsset(shader.BasicShader);
             GL.BindAttribLocation(shader.BasicShader.ProgramHandle, VertexAttribIndex.Tangent, "in_tangent");
             GL.BindAttribLocation(shader.BasicShader.ProgramHandle, VertexAttribIndex.Bitangent, "in_bitangent");
 
@@ -183,7 +169,7 @@ namespace vissatellite
             shader.NormalTextureLocation = GL.GetUniformLocation(shader.BasicShader.ProgramHandle, "normalmap_texture");
         }
 
-        private void LoadShaderAsset(ref BasicShaderAssetData shaderAsset)
+        private void LoadShaderAsset(BasicShaderAssetData shaderAsset)
         {
             if (shaderAsset.IsLoaded)
                 return;
@@ -232,7 +218,7 @@ namespace vissatellite
             shaderAsset.IsLoaded = true;
         }
 
-        private void LoadMeshAsset(ref MeshAssetData meshAsset)
+        private void LoadMeshAsset(MeshAssetData meshAsset)
         {
             if (meshAsset.IsLoaded)
                 return;
@@ -350,47 +336,47 @@ namespace vissatellite
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
-            if (this.quit) {
+            if (this.gameData.Quit) {
                 this.Exit();
             }
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            this.elapsedSeconds += e.Time;
-            this.MoveCamera(ref this.cameraData, (float)e.Time, 6.0f, 0.3f);
-            this.DoSimulation(e.Time);
+            this.MoveCamera(this.gameData.CameraData, (float)e.Time, 6.0f, 0.3f);
+            this.DoSimulation(this.gameData.SimulationData, e.Time);
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             var earthMatrix =
                 Matrix4.Identity *
-                Matrix4.CreateRotationY(simulationData.CurrentEarthRotation) *
-                Matrix4.CreateScale((float)simulationData.RealEarthDiameter * (float)simulationSizeScalar);
+                Matrix4.CreateRotationY(this.gameData.SimulationData.CurrentEarthRotation) *
+                Matrix4.CreateScale((float)this.gameData.SimulationData.RealEarthDiameter * (float)this.gameData.SimulationData.SimulationSizeScalar);
 
             RenderWithBlinn(
-                ref this.sphereMeshAsset,
-                ref this.earthColorTexture,
-                ref this.emptyNormalTexture,
+                this.gameData.SphereMeshAsset,
+                this.gameData.EarthColorTexture,
+                this.gameData.EmptyNormalTexture,
                 earthMatrix);
 
-            for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
-                var satellite = this.simulationData.Satellites[i];
+            var satelliteSimData = this.gameData.SimulationData.Satellites;
+            for(int i = 0; i < satelliteSimData.Length; i++) {
+                var satellite = satelliteSimData[i];
                 if (satellite.IsVisible) {
                     var selectedScale = satellite.IsSelected ? 5.0f : 1.0f;
                     var satelliteMatrix =
                         Matrix4.Identity *
-                        Matrix4.CreateScale(this.satelliteSizeScale) *
+                        Matrix4.CreateScale(this.gameData.SatelliteSizeScale) *
                         Matrix4.CreateTranslation(satellite.Position);
 
                     var texture = satellite.IsSelected
-                        ? this.satelliteTextureSelected
-                        : this.satelliteTexture;
+                        ? this.gameData.SatelliteTextureSelected
+                        : this.gameData.SatelliteTexture;
 
                     RenderWithBlinn(
-                        ref this.satelliteMeshAsset,
-                        ref texture,
-                        ref this.emptyNormalTexture,
+                        this.gameData.SatelliteMeshAsset,
+                        texture,
+                        this.gameData.EmptyNormalTexture,
                         satelliteMatrix);
                 }
             }
@@ -398,39 +384,41 @@ namespace vissatellite
         }
 
         private void RenderWithBlinn(
-            ref MeshAssetData mesh,
-            ref ImageAssetData colorTexture,
-            ref ImageAssetData normalTexture,
+            MeshAssetData mesh,
+            ImageAssetData colorTexture,
+            ImageAssetData normalTexture,
             Matrix4 modelMatrix)
         {
+            var modelViewProjection =
+                modelMatrix *
+                this.gameData.CameraData.Transformation *
+                this.gameData.CameraData.PerspectiveProjection;
+
+            var shader = this.gameData.BlinnShader;
+
             GL.ActiveTexture(TextureUnit.Texture0);
             GL.BindTexture(TextureTarget.Texture2D, colorTexture.OpenGLHandle);
             GL.ActiveTexture(TextureUnit.Texture1);
             GL.BindTexture(TextureTarget.Texture2D, normalTexture.OpenGLHandle);
 
             GL.BindVertexArray(mesh.VertexArrayObjectHandle);
-            GL.UseProgram(blinnShader.BasicShader.ProgramHandle);
 
-            var modelViewProjection =
-                modelMatrix *
-                this.cameraData.Transformation *
-                this.cameraData.PerspectiveProjection;
-
+            GL.UseProgram(shader.BasicShader.ProgramHandle);
             GL.UniformMatrix4(
-                blinnShader.BasicShader.ModelviewProjectionMatrixLocation,
+                shader.BasicShader.ModelviewProjectionMatrixLocation,
                 false,
                 ref modelViewProjection);
 
-            GL.UniformMatrix4(blinnShader.ModelMatrixLocation, false, ref modelMatrix);
-            GL.Uniform1(blinnShader.ColorTextureLocation, 0);
-            GL.Uniform1(blinnShader.NormalTextureLocation, 1);
-            GL.Uniform1(blinnShader.MaterialShininessLocation, 2.0f);
-            GL.Uniform3(blinnShader.LightDirectionLocation, this.ambientLightDirection);
+            GL.UniformMatrix4(shader.ModelMatrixLocation, false, ref modelMatrix);
+            GL.Uniform1(shader.ColorTextureLocation, 0);
+            GL.Uniform1(shader.NormalTextureLocation, 1);
+            GL.Uniform1(shader.MaterialShininessLocation, 2.0f);
+            GL.Uniform3(shader.LightDirectionLocation, this.gameData.AmbientLightDirection);
 
-            GL.Uniform4(blinnShader.LightAmbientColorLocation, new Vector4(0.6f, 0.6f, 0.6f, 0));
-            GL.Uniform4(blinnShader.LightDiffuseColorLocation, new Vector4(0.8f, 0.8f, 0.8f, 0));
-            GL.Uniform4(blinnShader.LightSpecularColorLocation, new Vector4(0.0f, 0.0f, 0.0f, 0));
-            GL.Uniform4(blinnShader.CameraPositionLocation, new Vector4(this.cameraData.Eye, 1));
+            GL.Uniform4(shader.LightAmbientColorLocation, new Vector4(0.6f, 0.6f, 0.6f, 0));
+            GL.Uniform4(shader.LightDiffuseColorLocation, new Vector4(0.8f, 0.8f, 0.8f, 0));
+            GL.Uniform4(shader.LightSpecularColorLocation, new Vector4(0.0f, 0.0f, 0.0f, 0));
+            GL.Uniform4(shader.CameraPositionLocation, new Vector4(this.gameData.CameraData.Eye, 1));
 
             GL.DrawElements(
                 PrimitiveType.Triangles,
@@ -449,16 +437,16 @@ namespace vissatellite
         {
             var mouseRay = this.CalculateMouseRay(e.X, e.Y);
 
-            var satelliteRadius = this.satelliteMeshAsset.OverallMaximum * this.satelliteSizeScale;
+            var satelliteRadius = this.gameData.SatelliteMeshAsset.OverallMaximum * this.gameData.SatelliteSizeScale;
             var minHitDistance = float.PositiveInfinity;
             var minHitIndex = -1;
 
-            for(int i = 0; i < this.simulationData.Satellites.Length; i++) {
-                var satellite = this.simulationData.Satellites[i];
+            for(int i = 0; i < this.gameData.SimulationData.Satellites.Length; i++) {
+                var satellite = this.gameData.SimulationData.Satellites[i];
                 satellite.IsSelected = false;
                 var sPosition = satellite.Position;
                 var distance = CalculateDistancePointLine(
-                    this.cameraData.Eye,
+                    this.gameData.CameraData.Eye,
                     mouseRay,
                     sPosition);
 
@@ -469,7 +457,7 @@ namespace vissatellite
             }
 
             if(minHitIndex > 0) {
-                var selectedSatellite = this.simulationData.Satellites[minHitIndex];
+                var selectedSatellite = this.gameData.SimulationData.Satellites[minHitIndex];
 
                 if (selectedSatellite.IsVisible)
                 {
@@ -492,102 +480,105 @@ namespace vissatellite
 
         protected override void OnKeyUp(KeyboardKeyEventArgs e)
         {
+            var keyboardInput = this.gameData.KeyboardInput;
             if (e.Key == Key.W)
-                this.keyboardInput.W = false;
+                keyboardInput.W = false;
             else if(e.Key == Key.A)
-                this.keyboardInput.A = false;
+                keyboardInput.A = false;
             else if(e.Key == Key.S)
-                this.keyboardInput.S = false;
+                keyboardInput.S = false;
             else if(e.Key == Key.D)
-                this.keyboardInput.D = false;
+                keyboardInput.D = false;
             else if(e.Key == Key.Up)
-                this.keyboardInput.UpArrow = false;
+                keyboardInput.UpArrow = false;
             else if(e.Key == Key.Down)
-                this.keyboardInput.DownArrow = false;
+                keyboardInput.DownArrow = false;
             else if(e.Key == Key.Left)
-                this.keyboardInput.LeftArrow = false;
+                keyboardInput.LeftArrow = false;
             else if(e.Key == Key.Right)
-                this.keyboardInput.RightArrow = false;
+                keyboardInput.RightArrow = false;
 
             if(e.Key == Key.C && e.Modifiers.HasFlag(KeyModifiers.Control))
-                this.quit = true;
+                this.gameData.Quit = true;
             if(e.Key == Key.Escape)
-                this.quit = true;
+                this.gameData.Quit = true;
 
             base.OnKeyDown(e);
         }
 
         protected override void OnKeyDown(KeyboardKeyEventArgs e)
         {
+            var keyboardInput = this.gameData.KeyboardInput;
             if (e.Key == Key.W)
-                this.keyboardInput.W = true;
+                keyboardInput.W = true;
             else if(e.Key == Key.A)
-                this.keyboardInput.A = true;
+                keyboardInput.A = true;
             else if(e.Key == Key.S)
-                this.keyboardInput.S = true;
+                keyboardInput.S = true;
             else if(e.Key == Key.D)
-                this.keyboardInput.D = true;
+                keyboardInput.D = true;
             else if(e.Key == Key.Up)
-                this.keyboardInput.UpArrow = true;
+                keyboardInput.UpArrow = true;
             else if(e.Key == Key.Down)
-                this.keyboardInput.DownArrow = true;
+                keyboardInput.DownArrow = true;
             else if(e.Key == Key.Left)
-                this.keyboardInput.LeftArrow = true;
+                keyboardInput.LeftArrow = true;
             else if(e.Key == Key.Right)
-                this.keyboardInput.RightArrow = true;
+                keyboardInput.RightArrow = true;
             base.OnKeyDown(e);
         }
 
         private void MoveCamera(
-                ref CameraData camera,
+                CameraData camera,
                 float fTimeDelta,
                 float translationSens,
                 float rotationSens)
         {
+            var keyboardInput = this.gameData.KeyboardInput;
             var directionOrtho = Vector3.Cross(camera.Up, camera.Direction);
             directionOrtho.Normalize();
 
             // translation
-            if(this.keyboardInput.W) {
+            if(keyboardInput.W) {
                 camera.Eye += camera.Direction * translationSens * fTimeDelta;
             }
-            if(this.keyboardInput.S) {
+            if(keyboardInput.S) {
                 camera.Eye += -camera.Direction * translationSens * fTimeDelta;
             }
 
             // rotation
             float angle = (float)(Math.PI * fTimeDelta * rotationSens);
-            if(this.keyboardInput.UpArrow) {
+            if(keyboardInput.UpArrow) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(directionOrtho, -angle);
                 var newDirection4 = new Vector4(camera.Direction) * rotationMatrix;
                 camera.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.DownArrow) {
+            if(keyboardInput.DownArrow) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(directionOrtho, angle);
                 var newDirection4 = new Vector4(camera.Direction) * rotationMatrix;
                 camera.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.LeftArrow) {
+            if(keyboardInput.LeftArrow) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(camera.Up, angle);
                 var newDirection4 = new Vector4(camera.Direction) * rotationMatrix;
                 camera.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.RightArrow) {
+            if(keyboardInput.RightArrow) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(camera.Up, -angle);
                 var newDirection4 = new Vector4(camera.Direction) * rotationMatrix;
                 camera.Direction = newDirection4.Xyz;
             }
-            if(this.keyboardInput.A) {
+            if(keyboardInput.A) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(camera.Direction, -angle);
                 var newUp4 = new Vector4(camera.Up) * rotationMatrix;
                 camera.Up = newUp4.Xyz;
             }
-            if(this.keyboardInput.D) {
+            if(keyboardInput.D) {
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(camera.Direction, angle);
                 var newUp4 = new Vector4(camera.Up) * rotationMatrix;
                 camera.Up = newUp4.Xyz;
             }
-            this.UpdateCameraTransformation(ref camera);
+            UpdateCameraTransformation(camera);
         }
 
         private void ProcessConsoleInput()
@@ -597,13 +588,13 @@ namespace vissatellite
                 if(line.StartsWith("simtime")) {
                     var time = line.Substring(7);
                     var newScalar = double.Parse(time.Trim());
-                    this.simulationData.SimulationSpeed = newScalar;
+                    this.gameData.SimulationData.SimulationSpeed = newScalar;
                 }
                 else if (line.StartsWith("show"))
                 {
                     var filter = line.Substring(5);
 
-                    foreach(var sat in simulationData.Satellites)
+                    foreach(var sat in gameData.SimulationData.Satellites)
                     {
                         switch (filter)
                         {
@@ -657,12 +648,12 @@ namespace vissatellite
 
         protected override void OnUnload(EventArgs e)
         {
-            this.consoleTask.Wait(0);
-            this.UnloadImageAsset(this.earthColorTexture);
-            this.UnloadImageAsset(this.emptyNormalTexture);
-            this.UnloadImageAsset(this.satelliteTexture);
-            this.UnloadMeshData(this.sphereMeshAsset);
-            this.UnloadMeshData(this.satelliteMeshAsset);
+            this.gameData.ConsoleTask.Wait(0);
+            this.UnloadImageAsset(this.gameData.EarthColorTexture);
+            this.UnloadImageAsset(this.gameData.EmptyNormalTexture);
+            this.UnloadImageAsset(this.gameData.SatelliteTexture);
+            this.UnloadMeshData(this.gameData.SphereMeshAsset);
+            this.UnloadMeshData(this.gameData.SatelliteMeshAsset);
         }
 
         private void UnloadBlinnShaderAsset(BlinnShaderAsset shader)
@@ -705,14 +696,17 @@ namespace vissatellite
             var fov = 60;
             GL.Viewport(0, 0, Width, Height);
             var aspectRatio = Width / (float)Height;
-            this.cameraData.ViewportWidth = Width;
-            this.cameraData.ViewportHeight = Height;
+            this.gameData.CameraData.ViewportWidth = Width;
+            this.gameData.CameraData.ViewportHeight = Height;
             var yFieldOfView = (float)(fov * Math.PI / 180.0f);
-            this.cameraData.PerspectiveProjection =
-                Matrix4.CreatePerspectiveFieldOfView(yFieldOfView, aspectRatio, this.cameraData.zNear, this.cameraData.zFar);
+            this.gameData.CameraData.PerspectiveProjection = Matrix4.CreatePerspectiveFieldOfView(
+                yFieldOfView,
+                aspectRatio,
+                this.gameData.CameraData.zNear,
+                this.gameData.CameraData.zFar);
         }
 
-        private void UpdateCameraTransformation(ref CameraData cameraData)
+        private void UpdateCameraTransformation(CameraData cameraData)
         {
             cameraData.Transformation = Matrix4.LookAt(
                     cameraData.Eye,
@@ -722,12 +716,12 @@ namespace vissatellite
 
         private Vector3 CalculateMouseRay(int x, int y)
         {
-            var mouseX = ((x / (float)this.cameraData.ViewportWidth) * 2.0f) - 1.0f;
-            var mouseY = 1.0f - ((y / (float)this.cameraData.ViewportHeight) * 2.0f);
+            var mouseX = ((x / (float)this.gameData.CameraData.ViewportWidth) * 2.0f) - 1.0f;
+            var mouseY = 1.0f - ((y / (float)this.gameData.CameraData.ViewportHeight) * 2.0f);
             var mouseVector = new Vector4(mouseX, mouseY, 0, 1.0f);
 
-            var inverseTransformation = Matrix4.Invert(this.cameraData.Transformation);
-            var inverseProjection = Matrix4.Invert(this.cameraData.PerspectiveProjection);
+            var inverseTransformation = Matrix4.Invert(this.gameData.CameraData.Transformation);
+            var inverseProjection = Matrix4.Invert(this.gameData.CameraData.PerspectiveProjection);
             mouseVector = mouseVector * inverseProjection;
             mouseVector = mouseVector * inverseTransformation;
 
@@ -737,7 +731,7 @@ namespace vissatellite
                 mouseVector.Z /= mouseVector.W;
             }
 
-            var mouseRay = mouseVector.Xyz - this.cameraData.Eye;
+            var mouseRay = mouseVector.Xyz - this.gameData.CameraData.Eye;
             mouseRay.Normalize();
             return mouseRay;
         }
@@ -765,12 +759,10 @@ namespace vissatellite
         // simulation stuff
         //
 
-        private void InitSimulationData()
+        private void InitSimulationData(SimData simData)
         {
-            this.simulationData = new SimData();
-
-            this.simulationData.CurrentEarthRotation = 0;
-            this.simulationData.SimulationSpeed = 1000.0f;
+            simData.CurrentEarthRotation = 0;
+            simData.SimulationSpeed = 1000.0f;
 
 
             var satelites = new List<SatelliteSimData>();
@@ -804,7 +796,7 @@ namespace vissatellite
                 satelites.Add(satelite);
 
                 //Calculated what we need
-                satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + simulationData.RealEarthDiameter) / 2;
+                satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + simData.RealEarthDiameter) / 2;
 
                 if (satelite.ClassOfOrbit == "GEO")
                 {
@@ -816,21 +808,22 @@ namespace vissatellite
                 satelite.ArgumentOfPeriapsis = (float) (rand.NextDouble() * Math.PI * 2);
             }
 
-            this.simulationData.Satellites = satelites.ToArray();
+            simData.SimulationSizeScalar = 0.001f;
+            simData.Satellites = satelites.ToArray();
         }
 
-        private void DoSimulation(double fTimeDelta)
+        private void DoSimulation(SimData simData, double fTimeDelta)
         {
+            simData.ElapsedSeconds += fTimeDelta;
+            double time = simData.ElapsedSeconds * simData.SimulationSpeed;
 
-            double time = elapsedSeconds * simulationData.SimulationSpeed;
-
-            simulationData.CurrentEarthRotation = (float)((time % this.simulationData.RealEarthPeriode / this.simulationData.RealEarthPeriode) * 2 * Math.PI);
+            simData.CurrentEarthRotation = (float)((time % simData.RealEarthPeriode / simData.RealEarthPeriode) * 2 * Math.PI);
 
 
-            for (int i = 0; i < this.simulationData.Satellites.Length; i++)
+            for (int i = 0; i < simData.Satellites.Length; i++)
             {
 
-                var satellite = this.simulationData.Satellites[i];
+                var satellite = simData.Satellites[i];
 
                 if (satellite.IsVisible)
                 {
@@ -859,9 +852,9 @@ namespace vissatellite
                     double posY = distance * Math.Sin(polarAngle);
 
 
-                    satellite.Position.X = (float) posX * (float) simulationSizeScalar;
-                    satellite.Position.Y = (float) posY * (float) simulationSizeScalar;
-                    satellite.Position.Z = (float) posZ * (float) simulationSizeScalar;
+                    satellite.Position.X = (float) posX * (float) simData.SimulationSizeScalar;
+                    satellite.Position.Y = (float) posY * (float) simData.SimulationSizeScalar;
+                    satellite.Position.Z = (float) posZ * (float) simData.SimulationSizeScalar;
                 }
             }
         }

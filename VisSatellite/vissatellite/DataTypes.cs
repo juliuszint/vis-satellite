@@ -1,13 +1,28 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using OpenTK;
 
 namespace vissatellite
 {
-    public struct Vector3i
+    public class GameData
     {
-        public int X;
-        public int Y;
+        public bool Quit;
+        public float SatelliteSizeScale = 0.3f;
+
+        public ImageAssetData EarthColorTexture;
+        public ImageAssetData SatelliteTexture;
+        public ImageAssetData SatelliteTextureSelected;
+        public ImageAssetData EmptyNormalTexture;
+        public MeshAssetData SphereMeshAsset;
+        public MeshAssetData SatelliteMeshAsset;
+        public CameraData CameraData;
+
+        public BlinnShaderAsset BlinnShader;
+        public Vector3 AmbientLightDirection;
+        public SimData SimulationData;
+        public KeyboardInput KeyboardInput;
+        public Task ConsoleTask;
     }
 
     public class ObjectVertexData
@@ -27,16 +42,7 @@ namespace vissatellite
         public float zMax;
     }
 
-    public static class VertexAttribIndex
-    {
-        public const int Vertex = 0;
-        public const int Normal = 1;
-        public const int Uv = 2;
-        public const int Tangent = 3;
-        public const int Bitangent = 4;
-    }
-
-    public struct ImageAssetData
+    public class ImageAssetData
     {
         public string AssetName;
         public bool IsLoaded;
@@ -44,7 +50,7 @@ namespace vissatellite
         public bool IsDisplacement;
     }
 
-    public struct MeshAssetData
+    public class MeshAssetData
     {
         public string AssetName;
         public bool IsLoaded;
@@ -61,7 +67,7 @@ namespace vissatellite
         public float OverallMaximum;
     }
 
-    public struct BasicShaderAssetData
+    public class BasicShaderAssetData
     {
         public bool IsLoaded;
         public string FragmentShaderName;
@@ -73,7 +79,7 @@ namespace vissatellite
         public int ModelviewProjectionMatrixLocation;
     }
 
-    public struct BlinnShaderAsset
+    public class BlinnShaderAsset
     {
         public BasicShaderAssetData BasicShader;
         public int ModelMatrixLocation;
@@ -87,7 +93,7 @@ namespace vissatellite
         public int CameraPositionLocation;
     }
 
-    public struct CameraData
+    public class CameraData
     {
         // perspective projection
         public float AspectRatio;
@@ -109,8 +115,10 @@ namespace vissatellite
 
     public class SimData
     {
+        public double ElapsedSeconds;
         public float RealEarthPeriode = 24 * 60 * 60;
         public float RealEarthDiameter = 12742;
+	    public double SimulationSizeScalar;
 
         public double SimulationSpeed;
 
@@ -143,7 +151,7 @@ namespace vissatellite
         public bool IsSelected;
     }
 
-    public struct KeyboardInput
+    public class KeyboardInput
     {
         public bool W;
         public bool A;
@@ -154,5 +162,14 @@ namespace vissatellite
         public bool UpArrow;
         public bool DownArrow;
         public bool RightArrow;
+    }
+
+    public static class VertexAttribIndex
+    {
+        public const int Vertex = 0;
+        public const int Normal = 1;
+        public const int Uv = 2;
+        public const int Tangent = 3;
+        public const int Bitangent = 4;
     }
 }
