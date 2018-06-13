@@ -363,7 +363,6 @@ namespace vissatellite
             for(int i = 0; i < satelliteSimData.Length; i++) {
                 var satellite = satelliteSimData[i];
                 if (satellite.IsVisible) {
-                    var selectedScale = satellite.IsSelected ? 5.0f : 1.0f;
                     var satelliteMatrix =
                         Matrix4.Identity *
                         Matrix4.CreateScale(this.gameData.SatelliteSizeScale) *
@@ -437,7 +436,6 @@ namespace vissatellite
         {
             var mouseRay = this.CalculateMouseRay(e.X, e.Y);
 
-            var satelliteRadius = this.gameData.SatelliteMeshAsset.OverallMaximum * this.gameData.SatelliteSizeScale;
             var minHitDistance = float.PositiveInfinity;
             var minHitIndex = -1;
 
