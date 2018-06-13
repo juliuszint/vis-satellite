@@ -116,7 +116,8 @@ namespace vissatellite
     public class SimData
     {
         public double ElapsedSeconds;
-        public float RealEarthPeriode = 24 * 60 * 60;
+
+        public float RealEarthPeriode = 23 * 60 * 60 + 56 * 60 + 4.091f;
         public float RealEarthDiameter = 12742;
 	    public double SimulationSizeScalar;
 

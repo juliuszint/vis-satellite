@@ -67,7 +67,7 @@ namespace vissatellite
             this.gameData.CameraData.Up = new Vector3(0, 1, 0);
             this.gameData.CameraData.Direction = new Vector3(0, 0, -1);
             this.gameData.CameraData.zNear = 0.1f;
-            this.gameData.CameraData.zFar = 500.0f;
+            this.gameData.CameraData.zFar = 5000.0f;
             UpdateCameraTransformation(this.gameData.CameraData);
 
             this.gameData.AmbientLightDirection = new Vector3(-1, 0, 0);
@@ -763,6 +763,7 @@ namespace vissatellite
         {
             simData.CurrentEarthRotation = 0;
             simData.SimulationSpeed = 1000.0f;
+            simData.SimulationSizeScalar = 0.001f;
 
 
             var satelites = new List<SatelliteSimData>();
@@ -779,6 +780,8 @@ namespace vissatellite
 
                 var satelite = new SatelliteSimData();
                 satelite.IsVisible = true;
+                satelite.IsSelected = false;
+
                 satelite.Name = elements[0];
                 satelite.Users = elements[4];
                 satelite.ClassOfOrbit = elements[7];
@@ -792,8 +795,6 @@ namespace vissatellite
                 satelite.Eccentricity = float.Parse(elements[12], CultureInfo.InvariantCulture);
                 satelite.Inclenation = float.Parse(elements[13], CultureInfo.InvariantCulture) * (float) Math.PI/180;
                 satelite.Periode = float.Parse(elements[14].Replace("\"", ""), CultureInfo.InvariantCulture) * 60;
-                satelite.Position = new Vector3(satelites.Count, 0, 0);
-                satelites.Add(satelite);
 
                 //Calculated what we need
                 satelite.SemiMajorAxis = (float)(satelite.Apogee + satelite.Perigee + simData.RealEarthDiameter) / 2;
@@ -801,9 +802,13 @@ namespace vissatellite
                 //Generate random values for needed object elements that are not in the dataset
                 satelite.LongitudeOfAscendingNode = (float)(rand.NextDouble() * Math.PI * 2);
                 satelite.ArgumentOfPeriapsis = (float) (rand.NextDouble() * Math.PI * 2);
-            }
 
-            simData.SimulationSizeScalar = 0.001f;
+
+                satelite.Position = new Vector3(0, 0, 0);
+                satelites.Add(satelite);
+
+
+            }
             simData.Satellites = satelites.ToArray();
         }
 
@@ -812,7 +817,7 @@ namespace vissatellite
             simData.ElapsedSeconds += fTimeDelta;
             double time = simData.ElapsedSeconds * simData.SimulationSpeed;
 
-            simData.CurrentEarthRotation = (float)((time % simData.RealEarthPeriode / simData.RealEarthPeriode) * 2 * Math.PI);
+            simData.CurrentEarthRotation = (float)(time % simData.RealEarthPeriode / simData.RealEarthPeriode * 2 * Math.PI);
 
 
             for (int i = 0; i < simData.Satellites.Length; i++)
@@ -850,6 +855,7 @@ namespace vissatellite
                     satellite.Position.X = (float) posX * (float) simData.SimulationSizeScalar;
                     satellite.Position.Y = (float) posY * (float) simData.SimulationSizeScalar;
                     satellite.Position.Z = (float) posZ * (float) simData.SimulationSizeScalar;
+
                 }
             }
         }
