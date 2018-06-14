@@ -364,13 +364,12 @@ namespace vissatellite
             var satelliteSimData = this.gameData.SimulationData.Satellites;
             for(int i = 0; i < satelliteSimData.Length; i++) {
                 var satellite = satelliteSimData[i];
-                if (satellite.IsVisible) {
+                if (satellite.IsVisible)
+                {
                     var satelliteMatrix =
                         Matrix4.Identity *
                         Matrix4.CreateScale(this.gameData.SatelliteSizeScale) *
-                        Matrix4.CreateTranslation(satellite.Position)*
-                        Matrix4.CreateRotationX(satellite.Inclenation)*
-                        Matrix4.CreateRotationY(satellite.LongitudeOfAscendingNode);
+                        Matrix4.CreateTranslation(satellite.Position);
 
 
                     var texture = satellite.IsSelected
@@ -847,17 +846,21 @@ namespace vissatellite
                     distance *= (1 - satellite.Eccentricity * satellite.Eccentricity) /
                                 (1 + satellite.Eccentricity * Math.Cos(trueAnomaly));
 
+
                     //Convert polar coordinates to cartesian coordinates
-                    double posX = distance * Math.Sin(trueAnomaly);
-                    double posZ = distance * Math.Cos(trueAnomaly);
-                    double posY = 0;
-
-                    //Rotation for inclination and longitude of the acending node could be done here, but for simplicity it's done while rendering the satellite
+                    satellite.Position.X = (float) (distance * Math.Sin(trueAnomaly));
+                    satellite.Position.Y = 0;
+                    satellite.Position.Z = (float)(distance * Math.Cos(trueAnomaly));
 
 
-                    satellite.Position.X = (float) posX * (float) simData.SimulationSizeScalar;
-                    satellite.Position.Y = (float) posY * (float) simData.SimulationSizeScalar;
-                    satellite.Position.Z = (float) posZ * (float) simData.SimulationSizeScalar;
+                    //Rotation for inclination and longitude of the acending node
+                    satellite.Position= Vector3.Transform(
+                                        Matrix3.CreateRotationX(satellite.Inclenation) *
+                                        Matrix3.CreateRotationY(satellite.LongitudeOfAscendingNode), satellite.Position);
+
+                    //Scale to the universe size
+                    satellite.Position = Vector3.Transform(Matrix3.CreateScale((float)simData.SimulationSizeScalar),
+                        satellite.Position);
 
                 }
             }
