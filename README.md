@@ -10,9 +10,7 @@ On Windows just double click the `vissatellite.exe` and on OS X start it by typi
 
 If there is a satellite on your Screen that you want to know more about just select it with a `Left Mouseclick`. Once selected, the color of the satellite changes to red and additional information appears on the Console.
 
-The console window does not only show additional information, it can also be used to manipulate the simulation.
-
-TODO:
+The console window does not only show additional information, it can also be used to manipulate the simulation. The implemented commands are printed to the console at application startup.
 
 ### Code
 #### Embedded resources
@@ -36,8 +34,7 @@ Five `.cs` files make up the entire source code for this tiny program.
 
 `DataTypes.cs` defines all datatypes on which the main code operates on. This project tries, just for fun, a data oriented design which seperates the data from code. The `GameData` class is the root of all evil and contains all game state. The bulk are loaded assets with their OpenGL handle and the simulation state.
 
-`SatelliteUniverse.cs` is the largest file containing all of the logic. Starting on top with some boilerplate code it continues with the `OnLoad` method that is responsible for loading all assets. This includes pushing these into the GPU memory and storing the handle. Next up is the rendering code that puts one earth to the screen and all the satellites. Following is input processing code with the camera movement and the, in a seperate thread executing, `ProcessConsoleInput` method that takes care of reading and processing commands typed into the console. Some unloading code that first and foremost is probably incomplete, but not really necessary since every GPU should be able to store all assets.
-
+`SatelliteUniverse.cs` is the largest file containing all of the logic. Starting on top with some boilerplate code it continues with the `OnLoad` method that is responsible for loading all assets. This includes pushing these into the GPU memory and storing the handle. Next up is the rendering code that puts one earth to the screen and all the satellites. Following is input processing code with the camera movement and the, in a seperate thread executing, `ProcessConsoleInput` method that takes care of reading and processing commands typed into the console. Some unloading code that first and foremost is probably incomplete, but not really necessary since every GPU should be able to store all assets. The methode `DoSimulation` gets called every frame. The postion of all satellites is calculated based on the elapsed seconds since the application was started and a factor for scaling the simulation speed.
 
 ### Simulation
 The simulation is based on converting the six keplerian orbit elements to cartesian coordinates at distinct points in time. A simplified (and approximateing) form of the kepler equation is used to calculate 2D polar coordinates in the equatorial (xz) plane first. The polar coordinates are then transformed to 3D cartesian coordinates (with the y-component always beeing zero). In order to account for the inclination and the angle of the ascending node, the 3D caertesian coordinates are rotated around the x-axis by the inclination and around the polar (y) axis by the longitude of the ascending node.
