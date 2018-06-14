@@ -366,11 +366,10 @@ namespace vissatellite
                 var satellite = satelliteSimData[i];
                 if (satellite.IsVisible)
                 {
-                    var satelliteMatrix =
+                  var satelliteMatrix =
                         Matrix4.Identity *
                         Matrix4.CreateScale(this.gameData.SatelliteSizeScale) *
                         Matrix4.CreateTranslation(satellite.Position);
-
 
                     var texture = satellite.IsSelected
                         ? this.gameData.SatelliteTextureSelected
@@ -822,48 +821,49 @@ namespace vissatellite
 
             simData.CurrentEarthRotation = (float)(time % simData.RealEarthPeriode / simData.RealEarthPeriode * 2 * Math.PI);
 
-
             for (int i = 0; i < simData.Satellites.Length; i++)
             {
-
                 var satellite = simData.Satellites[i];
-
                 if (satellite.IsVisible)
                 {
-                    double meanAnomaly = satellite.ArgumentOfPeriapsis;
-                    meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
-
-                    meanAnomaly %= Math.PI * 2;
-
-                    //Calc aproximated true anomaly
-                    double trueAnomaly = meanAnomaly;
-                    trueAnomaly += 2 * satellite.Eccentricity * Math.Sin(meanAnomaly);
-                    trueAnomaly += 5.0f / 4.0f *
-                                   (satellite.Eccentricity * satellite.Eccentricity * Math.Sin(2 * meanAnomaly));
-
-
-                    double distance = satellite.SemiMajorAxis;
-                    distance *= (1 - satellite.Eccentricity * satellite.Eccentricity) /
-                                (1 + satellite.Eccentricity * Math.Cos(trueAnomaly));
-
-
-                    //Convert polar coordinates to cartesian coordinates
-                    satellite.Position.X = (float) (distance * Math.Sin(trueAnomaly));
-                    satellite.Position.Y = 0;
-                    satellite.Position.Z = (float)(distance * Math.Cos(trueAnomaly));
-
-
-                    //Rotation for inclination and longitude of the acending node
-                    satellite.Position= Vector3.Transform(
-                                        Matrix3.CreateRotationX(satellite.Inclenation) *
-                                        Matrix3.CreateRotationY(satellite.LongitudeOfAscendingNode), satellite.Position);
-
-                    //Scale to the universe size
-                    satellite.Position = Vector3.Transform(Matrix3.CreateScale((float)simData.SimulationSizeScalar),
-                        satellite.Position);
-
+                    CalculateSatelitePosition(satellite, time);
                 }
             }
+        }
+
+	    private void CalculateSatelitePosition(SatelliteSimData satellite, double time)
+	    {
+	        double meanAnomaly = satellite.ArgumentOfPeriapsis;
+	        meanAnomaly += (2 * Math.PI) * time / satellite.Periode;
+
+	        meanAnomaly %= Math.PI * 2;
+
+	        //Calc aproximated true anomaly
+	        double trueAnomaly = meanAnomaly;
+	        trueAnomaly += 2 * satellite.Eccentricity * Math.Sin(meanAnomaly);
+	        trueAnomaly += 5.0f / 4.0f *
+	                       (satellite.Eccentricity * satellite.Eccentricity * Math.Sin(2 * meanAnomaly));
+
+
+	        double distance = satellite.SemiMajorAxis;
+	        distance *= (1 - satellite.Eccentricity * satellite.Eccentricity) /
+	                    (1 + satellite.Eccentricity * Math.Cos(trueAnomaly));
+
+
+	        //Convert polar coordinates to cartesian coordinates
+	        satellite.Position.X = (float)(distance * Math.Sin(trueAnomaly));
+	        satellite.Position.Y = 0;
+	        satellite.Position.Z = (float)(distance * Math.Cos(trueAnomaly));
+
+
+	        //Rotation for inclination and longitude of the acending node
+	        satellite.Position = Vector3.Transform(
+	            Matrix3.CreateRotationX(satellite.Inclenation) *
+	            Matrix3.CreateRotationY(satellite.LongitudeOfAscendingNode), satellite.Position);
+
+	        //Scale to the universe size
+	        satellite.Position = Vector3.Transform(Matrix3.CreateScale((float)gameData.SimulationData.SimulationSizeScalar),
+	            satellite.Position);
         }
     }
 }
