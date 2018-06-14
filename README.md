@@ -1,10 +1,6 @@
 ## Project for Visualisierung und HCI class
 This application visualizes satellites orbiting earth. The two library in use are the OpenTK library for low level access to OpenGL from C# and ImageSharp for loading the textures. OpenTK is able to run on Windows with the .Net Framework and under Linux or OSX with Mono. The codebase therefor should compile and run without any modifications under all of these operating systems (tested on OS X, Windows and Linux).
-The application was tested with the following software versions:
-### Linux
-Mono: 5.12.0
-Mesa:
-OpenGL:
+
 
 ### Using the program
 
@@ -44,6 +40,9 @@ Five `.cs` files make up the entire source code for this tiny program.
 
 
 ###Simulation
-The simulation is based on converting the six keplerian orbit elements to cartesian coordinates at distinct points in time. A simplified (and approximateing) form of the kepler equation is used to calculate 2D polar coordinates in the xy-plane first. The polar coordinates are then transformed to 3D cartesian coordinates (with the y-component always beeing zero). In order to account for the inclination and the angle of the ascending node, the 3D caertesian coordinates are rotated around the x-axis by the inclination and around hte y-axis by the longitude of the ascending node.
+The simulation is based on converting the six keplerian orbit elements to cartesian coordinates at distinct points in time. A simplified (and approximateing) form of the kepler equation is used to calculate 2D polar coordinates in the equatorial (xz) plane first. The polar coordinates are then transformed to 3D cartesian coordinates (with the y-component always beeing zero). In order to account for the inclination and the angle of the ascending node, the 3D caertesian coordinates are rotated around the x-axis by the inclination and around the polar (y) axis by the longitude of the ascending node.
 
 Because the used dataset is missing two of the six requierd elements to fully constrain an orbit, the missing values are generated randomly when the data is loaded. The missing elements are the argument of periapsis and the longitude of the ascending node. Both elements are used to define the orientation of the orbital plane.
+
+
+![alt text](images/cord_system.png)
