@@ -82,6 +82,7 @@ namespace vissatellite
             Console.WriteLine("simtime time    setzen der simulationsgeschwindigkeit");
             Console.WriteLine("show all        zeigt alle Satelliten an");
             Console.WriteLine("     none       zeigt keinen Satelliten an");
+            Console.WriteLine("     sel        zeigt den selektierten Satelliten an");
             Console.WriteLine("     iridium    zeigt Iridium Satelliten an");
             Console.WriteLine("     civ        zeigt zivile Satelliten an");
             Console.WriteLine("     com        zeigt kommerzielle Satelliten an");
@@ -91,6 +92,7 @@ namespace vissatellite
             Console.WriteLine("     meo        zeigt Satelliten im MEO an");
             Console.WriteLine("     leo        zeigt Satelliten im LEO an");
             Console.WriteLine("     elp        zeigt Satelliten in eliptischen Umlaufbahnen an");
+
 
             Console.WriteLine();
             Console.Write("> ");
@@ -366,7 +368,10 @@ namespace vissatellite
                     var satelliteMatrix =
                         Matrix4.Identity *
                         Matrix4.CreateScale(this.gameData.SatelliteSizeScale) *
-                        Matrix4.CreateTranslation(satellite.Position);
+                        Matrix4.CreateTranslation(satellite.Position)*
+                        Matrix4.CreateRotationX(satellite.Inclenation)*
+                        Matrix4.CreateRotationY(satellite.LongitudeOfAscendingNode);
+
 
                     var texture = satellite.IsSelected
                         ? this.gameData.SatelliteTextureSelected
@@ -602,6 +607,9 @@ namespace vissatellite
                             case "none":
                                 sat.IsVisible = false;
                                 break;
+                            case "sel":
+                                sat.IsVisible = sat.IsSelected;
+                                break;
                             case "iridium":
                                 sat.IsVisible = sat.Name.Contains("Iridium");
                                 break;
@@ -804,8 +812,6 @@ namespace vissatellite
 
                 satelite.Position = new Vector3(0, 0, 0);
                 satelites.Add(satelite);
-
-
             }
             simData.Satellites = satelites.ToArray();
         }
@@ -841,13 +847,12 @@ namespace vissatellite
                     distance *= (1 - satellite.Eccentricity * satellite.Eccentricity) /
                                 (1 + satellite.Eccentricity * Math.Cos(trueAnomaly));
 
+                    //Convert polar coordinates to cartesian coordinates
+                    double posX = distance * Math.Sin(trueAnomaly);
+                    double posZ = distance * Math.Cos(trueAnomaly);
+                    double posY = 0;
 
-                    double polarAngle = Math.Sin(trueAnomaly + satellite.LongitudeOfAscendingNode) * satellite.Inclenation;
-
-                    //Convert spherical coordinates to cartesian coordinates
-                    double posX = distance * Math.Sin(trueAnomaly) * Math.Cos(polarAngle);
-                    double posZ = distance * Math.Cos(trueAnomaly) * Math.Cos(polarAngle);
-                    double posY = distance * Math.Sin(polarAngle);
+                    //Rotation for inclination and longitude of the acending node could be done here, but for simplicity it's done while rendering the satellite
 
 
                     satellite.Position.X = (float) posX * (float) simData.SimulationSizeScalar;
