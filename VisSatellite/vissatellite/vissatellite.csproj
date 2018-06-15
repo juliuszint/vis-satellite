@@ -155,9 +155,7 @@
     <EmbeddedResource Include="meshes\plane.obj" />
     <EmbeddedResource Include="shader\Blinn_FS.glsl" />
     <EmbeddedResource Include="shader\Blinn_VS.glsl" />
-    <EmbeddedResource Include="textures\brown.jpg" />
     <EmbeddedResource Include="textures\empty_normal.jpg" />
-    <EmbeddedResource Include="textures\wall_normal.png" />
     <EmbeddedResource Include="textures\earth.jpg" />
     <EmbeddedResource Include="meshes\sphere.obj" />
     <EmbeddedResource Include="meshes\satellite.obj" />
