@@ -6,7 +6,7 @@ This application visualizes satellites orbiting earth. The two library in use ar
 
 ![alt text](images/vissatellite.png)
 
-On Windows just double click the `vissatellite.exe` and on OS X start it by typing `mono vissatellite.exe` into the Terminal app. Vissatellite makes use of the Console window as well as the GUI. Moving around in space is done in the GUI window. Once focused use `W` and `S` to move forward or backward, `Arrow Up` and `Arrow Down` to control the Pitch and `Arrow Left` and `Arrow Right` to manipulate the Yaw Axis. Roll can also be changed by using `A` and `D` just like in any flight simulator.
+On Windows just double click the `vissatellite.exe` and on OS X start it by typing `mono vissatellite.exe` into the Terminal app. Vissatellite makes use of the Console window as well as the GUI. Moving around in space is done in the GUI window. Once focused use `W` and `S` to move forward or backward, `A` and `D`to  move left or right, `Q` and `E` to move up and down, `Arrow Up` and `Arrow Down` to control the Pitch and `Arrow Left` and `Arrow Right` to manipulate the Yaw Axis.
 
 If there is a satellite on your Screen that you want to know more about just select it with a `Left Mouseclick`. Once selected, the color of the satellite changes to red and additional information appears on the Console.
 
