@@ -45,11 +45,11 @@ namespace vissatellite
             this.LoadImageAsset(this.gameData.EarthColorTexture);
 
             this.gameData.SatelliteTexture = new ImageAssetData();
-            this.gameData.SatelliteTexture.AssetName = "vissatellite.textures.satellite_texture.jpg";
+            this.gameData.SatelliteTexture.AssetName = "vissatellite.textures.satellite_texture_c0.jpg";
             this.LoadImageAsset(this.gameData.SatelliteTexture);
 
             this.gameData.SatelliteTextureSelected = new ImageAssetData();
-            this.gameData.SatelliteTextureSelected.AssetName = "vissatellite.textures.satellite_texture_selected.jpg";
+            this.gameData.SatelliteTextureSelected.AssetName = "vissatellite.textures.satellite_texture_c6.jpg";
             this.LoadImageAsset(this.gameData.SatelliteTextureSelected);
 
             this.gameData.EmptyNormalTexture = new ImageAssetData();
