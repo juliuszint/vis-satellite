@@ -498,6 +498,10 @@ namespace vissatellite
                 keyboardInput.LeftArrow = false;
             else if(e.Key == Key.Right)
                 keyboardInput.RightArrow = false;
+            else if(e.Key == Key.Q)
+                keyboardInput.Q = false;
+            else if(e.Key == Key.E)
+                keyboardInput.E = false;
 
             if(e.Key == Key.C && e.Modifiers.HasFlag(KeyModifiers.Control))
                 this.gameData.Quit = true;
@@ -526,6 +530,11 @@ namespace vissatellite
                 keyboardInput.LeftArrow = true;
             else if(e.Key == Key.Right)
                 keyboardInput.RightArrow = true;
+            else if(e.Key == Key.Q)
+                keyboardInput.Q = true;
+            else if(e.Key == Key.E)
+                keyboardInput.E = true;
+
             base.OnKeyDown(e);
         }
 
@@ -545,6 +554,18 @@ namespace vissatellite
             }
             if(keyboardInput.S) {
                 camera.Eye += -camera.Direction * translationSens * fTimeDelta;
+            }
+            if(keyboardInput.A) {
+                camera.Eye += directionOrtho * translationSens * fTimeDelta;
+            }
+            if(keyboardInput.D) {
+                camera.Eye += -directionOrtho * translationSens * fTimeDelta;
+            }
+            if(keyboardInput.Q) {
+                camera.Eye += camera.Up * translationSens * fTimeDelta;
+            }
+            if(keyboardInput.E) {
+                camera.Eye += -camera.Up * translationSens * fTimeDelta;
             }
 
             // rotation
@@ -568,16 +589,6 @@ namespace vissatellite
                 var rotationMatrix = Matrix4.CreateFromAxisAngle(camera.Up, -angle);
                 var newDirection4 = new Vector4(camera.Direction) * rotationMatrix;
                 camera.Direction = newDirection4.Xyz;
-            }
-            if(keyboardInput.A) {
-                var rotationMatrix = Matrix4.CreateFromAxisAngle(camera.Direction, -angle);
-                var newUp4 = new Vector4(camera.Up) * rotationMatrix;
-                camera.Up = newUp4.Xyz;
-            }
-            if(keyboardInput.D) {
-                var rotationMatrix = Matrix4.CreateFromAxisAngle(camera.Direction, angle);
-                var newUp4 = new Vector4(camera.Up) * rotationMatrix;
-                camera.Up = newUp4.Xyz;
             }
             UpdateCameraTransformation(camera);
         }

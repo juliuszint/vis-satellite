@@ -158,6 +158,8 @@ namespace vissatellite
         public bool A;
         public bool S;
         public bool D;
+        public bool Q;
+        public bool E;
 
         public bool LeftArrow;
         public bool UpArrow;
