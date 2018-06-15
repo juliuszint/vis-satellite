@@ -44,13 +44,20 @@ namespace vissatellite
             this.gameData.EarthColorTexture.AssetName = "vissatellite.textures.earth.jpg";
             this.LoadImageAsset(this.gameData.EarthColorTexture);
 
-            this.gameData.SatelliteTexture = new ImageAssetData();
-            this.gameData.SatelliteTexture.AssetName = "vissatellite.textures.satellite_texture_c0.jpg";
-            this.LoadImageAsset(this.gameData.SatelliteTexture);
 
-            this.gameData.SatelliteTextureSelected = new ImageAssetData();
-            this.gameData.SatelliteTextureSelected.AssetName = "vissatellite.textures.satellite_texture_c6.jpg";
-            this.LoadImageAsset(this.gameData.SatelliteTextureSelected);
+
+            this.gameData.SatelliteTextures = new ImageAssetData[7];
+
+            for (int i = 0; i < this.gameData.SatelliteTextures.Length; i++)
+            {
+                this.gameData.SatelliteTextures[i] = new ImageAssetData();
+                this.gameData.SatelliteTextures[i].AssetName = $"vissatellite.textures.satellite_texture_c{i}.jpg";
+                this.LoadImageAsset(this.gameData.SatelliteTextures[i]);
+            }
+
+            this.gameData.SatelliteTextureDefault = this.gameData.SatelliteTextures[0];
+            this.gameData.SatelliteTextureSelected = this.gameData.SatelliteTextures[6];
+
 
             this.gameData.EmptyNormalTexture = new ImageAssetData();
             this.gameData.EmptyNormalTexture.AssetName = "vissatellite.textures.empty_normal.jpg";
@@ -92,7 +99,9 @@ namespace vissatellite
             Console.WriteLine("     meo        zeigt Satelliten im MEO an");
             Console.WriteLine("     leo        zeigt Satelliten im LEO an");
             Console.WriteLine("     elp        zeigt Satelliten in eliptischen Umlaufbahnen an");
-
+            Console.WriteLine("color none      alle Satelliten werden in der Standardfarbe dargestellt");
+            Console.WriteLine("      orbit     die Satellitenfarbe wird dem Orbit-Typen angepasst");
+            Console.WriteLine("      users     die Satellitenfarbe wird den Verwendern angepasst");
 
             Console.WriteLine();
             Console.Write("> ");
@@ -371,9 +380,8 @@ namespace vissatellite
                         Matrix4.CreateScale(this.gameData.SatelliteSizeScale) *
                         Matrix4.CreateTranslation(satellite.Position);
 
-                    var texture = satellite.IsSelected
-                        ? this.gameData.SatelliteTextureSelected
-                        : this.gameData.SatelliteTexture;
+                    var texture = GetSatteliteTexture(satellite);
+
 
                     RenderWithBlinn(
                         this.gameData.SatelliteMeshAsset,
@@ -385,7 +393,9 @@ namespace vissatellite
             this.SwapBuffers();
         }
 
-        private void RenderWithBlinn(
+
+
+	    private void RenderWithBlinn(
             MeshAssetData mesh,
             ImageAssetData colorTexture,
             ImageAssetData normalTexture,
@@ -604,11 +614,11 @@ namespace vissatellite
                 }
                 else if (line.StartsWith("show"))
                 {
-                    var filter = line.Substring(5);
+                    var show = line.Substring(5);
 
                     foreach(var sat in gameData.SimulationData.Satellites)
                     {
-                        switch (filter)
+                        switch (show)
                         {
                             case "all":
                                 sat.IsVisible = true;
@@ -623,32 +633,55 @@ namespace vissatellite
                                 sat.IsVisible = sat.Name.Contains("Iridium");
                                 break;
                             case "civ":
-                                sat.IsVisible = sat.Users.Contains("Civil");
+                                sat.IsVisible = sat.Users.Equals(SatelliteUsers.CIVIL);
                                 break;
                             case "com":
-                                sat.IsVisible = sat.Users.Contains("Commercial");
+                                sat.IsVisible = sat.Users.Equals(SatelliteUsers.COMMERCIAL);
                                 break;
                             case "mil":
-                                sat.IsVisible = sat.Users.Contains("Military");
+                                sat.IsVisible = sat.Users.Equals(SatelliteUsers.MILITARY);
                                 break;
                             case "gov":
-                                sat.IsVisible = sat.Users.Contains("Government");
+                                sat.IsVisible = sat.Users.Equals(SatelliteUsers.GOVERNMENT);
                                 break;
                             case "geo":
-                                sat.IsVisible = sat.ClassOfOrbit.Equals("GEO");
+                                sat.IsVisible = sat.ClassOfOrbit == OrbitType.GEO;
                                 break;
                             case "meo":
-                                sat.IsVisible = sat.ClassOfOrbit.Equals("MEO");
+                                sat.IsVisible = sat.ClassOfOrbit == OrbitType.MEO;
                                 break;
                             case "leo":
-                                sat.IsVisible = sat.ClassOfOrbit.Equals("LEO");
+                                sat.IsVisible = sat.ClassOfOrbit == OrbitType.LEO;
                                 break;
                             case "elp":
-                                sat.IsVisible = sat.ClassOfOrbit.Equals("Elliptical");
+                                sat.IsVisible = sat.ClassOfOrbit == OrbitType.ELLIPTICAL;
                                 break;
-
+                            default:
+                                Console.WriteLine("Option not implemented");
+                                break;
                         }
                     }
+                }
+                else if (line.StartsWith("color")){
+
+                    var mode = line.Substring(6);
+
+                    switch (mode)
+                    {
+                        case "none":
+                            this.gameData.ColorCodeMode = ColorCodeMode.NONE;
+                            break;
+                        case "users":
+                            this.gameData.ColorCodeMode = ColorCodeMode.USERS;
+                            break;
+                        case "orbit":
+                            this.gameData.ColorCodeMode = ColorCodeMode.ORBITTYPE;
+                            break;
+                        default:
+                            Console.WriteLine("Option not implemented");
+                            break;
+                    }
+
                 }
                 else {
                     Console.WriteLine($"I am a teapot");
@@ -666,7 +699,10 @@ namespace vissatellite
             this.gameData.ConsoleTask.Wait(0);
             this.UnloadImageAsset(this.gameData.EarthColorTexture);
             this.UnloadImageAsset(this.gameData.EmptyNormalTexture);
-            this.UnloadImageAsset(this.gameData.SatelliteTexture);
+            foreach (ImageAssetData iad in this.gameData.SatelliteTextures)
+            {
+                this.UnloadImageAsset(iad);
+            }
             this.UnloadMeshData(this.gameData.SphereMeshAsset);
             this.UnloadMeshData(this.gameData.SatelliteMeshAsset);
         }
@@ -770,6 +806,63 @@ namespace vissatellite
             return result;
         }
 
+        private ImageAssetData GetSatteliteTexture(SatelliteSimData satellite)
+        {
+            ImageAssetData texture = null;
+            switch (this.gameData.ColorCodeMode)
+            {
+                case ColorCodeMode.NONE:
+                    texture = this.gameData.SatelliteTextureDefault;
+                    break;
+                case ColorCodeMode.USERS:
+                    switch (satellite.Users)
+                    {
+                        case SatelliteUsers.CIVIL:
+                            texture = this.gameData.SatelliteTextures[1];
+                            break;
+                        case SatelliteUsers.MILITARY:
+                            texture = this.gameData.SatelliteTextures[2];
+                            break;
+                        case SatelliteUsers.COMMERCIAL:
+                            texture = this.gameData.SatelliteTextures[3];
+                            break;
+                        case SatelliteUsers.GOVERNMENT:
+                            texture = this.gameData.SatelliteTextures[4];
+                            break;
+                        case SatelliteUsers.MIXED:
+                            texture = this.gameData.SatelliteTextures[5];
+                            break;
+                    }
+
+                    break;
+                case ColorCodeMode.ORBITTYPE:
+
+                    switch (satellite.ClassOfOrbit)
+                    {
+                        case OrbitType.LEO:
+                            texture = this.gameData.SatelliteTextures[1];
+                            break;
+                        case OrbitType.MEO:
+                            texture = this.gameData.SatelliteTextures[2];
+                            break;
+                        case OrbitType.GEO:
+                            texture = this.gameData.SatelliteTextures[3];
+                            break;
+                        case OrbitType.ELLIPTICAL:
+                            texture = this.gameData.SatelliteTextures[4];
+                            break;
+                    }
+                    break;
+            }
+
+            if (satellite.IsSelected)
+            {
+                texture = this.gameData.SatelliteTextureSelected;
+            }
+
+            return texture;
+        }
+
         //
         // simulation stuff
         //
@@ -798,8 +891,41 @@ namespace vissatellite
                 satelite.IsSelected = false;
 
                 satelite.Name = elements[0];
-                satelite.Users = elements[4];
-                satelite.ClassOfOrbit = elements[7];
+
+                switch (elements[4])
+                {
+                    case "Civil":
+                        satelite.Users = SatelliteUsers.CIVIL;
+                        break;
+                    case "Military":
+                        satelite.Users = SatelliteUsers.MILITARY;
+                        break;
+                    case "Government":
+                        satelite.Users = SatelliteUsers.GOVERNMENT;
+                        break;
+                    case "Commercial":
+                        satelite.Users = SatelliteUsers.COMMERCIAL;
+                        break;
+                    default:
+                        satelite.Users = SatelliteUsers.MIXED;
+                        break;
+                }
+
+                switch (elements[7])
+                {
+                    case "LEO":
+                        satelite.ClassOfOrbit = OrbitType.LEO;
+                        break;
+                    case "MEO":
+                        satelite.ClassOfOrbit = OrbitType.MEO;
+                        break;
+                    case "GEO":
+                        satelite.ClassOfOrbit = OrbitType.GEO;
+                        break;
+                    case "Elliptical":
+                        satelite.ClassOfOrbit = OrbitType.ELLIPTICAL;
+                        break;
+                }
 
                 //Read all the data we have
                 if (!elements[9].Equals(""))

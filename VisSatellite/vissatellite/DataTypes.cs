@@ -10,9 +10,14 @@ namespace vissatellite
         public bool Quit;
         public float SatelliteSizeScale = 0.3f;
 
+        public ColorCodeMode ColorCodeMode;
+
         public ImageAssetData EarthColorTexture;
-        public ImageAssetData SatelliteTexture;
+
+        public ImageAssetData[] SatelliteTextures;
+        public ImageAssetData SatelliteTextureDefault;
         public ImageAssetData SatelliteTextureSelected;
+
         public ImageAssetData EmptyNormalTexture;
         public MeshAssetData SphereMeshAsset;
         public MeshAssetData SatelliteMeshAsset;
@@ -127,6 +132,30 @@ namespace vissatellite
         public SatelliteSimData[] Satellites;
     }
 
+    public enum ColorCodeMode
+    {
+        NONE,
+        USERS,
+        ORBITTYPE
+    }
+
+    public enum SatelliteUsers
+    {
+        CIVIL,
+        MILITARY,
+        COMMERCIAL,
+        GOVERNMENT,
+        MIXED
+    }
+
+    public enum OrbitType
+    {
+        LEO,
+        MEO,
+        GEO,
+        ELLIPTICAL
+    }
+
     public class SatelliteSimData
     {
         public Vector3 Position;
@@ -134,8 +163,8 @@ namespace vissatellite
         public bool IsVisible;
 
         public string Name;
-        public string Users;
-        public string ClassOfOrbit;
+        public SatelliteUsers Users;
+        public OrbitType ClassOfOrbit;
 
 
         public float Apogee;
