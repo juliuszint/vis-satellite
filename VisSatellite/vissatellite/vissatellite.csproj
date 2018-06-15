@@ -150,9 +150,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="meshes\cube.obj" />
-    <EmbeddedResource Include="meshes\icosphere.obj" />
-    <EmbeddedResource Include="meshes\plane.obj" />
     <EmbeddedResource Include="shader\Blinn_FS.glsl" />
     <EmbeddedResource Include="shader\Blinn_VS.glsl" />
     <EmbeddedResource Include="textures\empty_normal.jpg" />
