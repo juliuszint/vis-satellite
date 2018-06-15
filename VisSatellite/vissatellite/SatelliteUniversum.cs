@@ -816,8 +816,8 @@ namespace vissatellite
 
         private void DoSimulation(SimData simData, double fTimeDelta)
         {
-            simData.ElapsedSeconds += fTimeDelta;
-            double time = simData.ElapsedSeconds * simData.SimulationSpeed;
+            simData.ElapsedSeconds += fTimeDelta * simData.SimulationSpeed;
+            double time = simData.ElapsedSeconds;
 
             simData.CurrentEarthRotation = (float)(time % simData.RealEarthPeriode / simData.RealEarthPeriode * 2 * Math.PI);
 

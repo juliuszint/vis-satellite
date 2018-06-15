@@ -43,3 +43,7 @@ Because the used dataset is missing two of the six requierd elements to fully co
 
 
 ![alt text](images/cord_system.png)
+
+### Misc
+Part of the code, like for example the Wavefront loader, was taken from the first master semester project (computer graphic class).
+
